@@ -1,0 +1,3 @@
+include LICENSE
+include anicration/config/example.txt
+include bin/*

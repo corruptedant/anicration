@@ -1,0 +1,14 @@
+Anicration
+---------------
+
+To install, do :
+$ python setup.py install
+
+To install a editable version(in the setup.py directory):
+$ pip install -e .
+
+Dependencies:
+----------------
+Tweepy (3.5.0)
+requests (2.13.0)
+

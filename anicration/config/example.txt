@@ -1,0 +1,88 @@
+# CONFIG SETTING FOR ANICRATION #
+# VER@GEN - anicration-0..6dev0
+
+[DEFAULT]
+#
+
+[AUTHENTICATION]
+# Setting it to True will make the script read the authentication keys from `*kwargs` instead.
+keys_from_args = True
+# THE ORDER OF THE KEY IS IMPORTANT, IT HAS TO BE ARRANGED AS SHOWN BELOW
+# consumer_key, consumer_secret, auth_key, auth_secret
+keys = 
+
+[PATHS]
+# List the full directory address to the specified folder.
+# The a folder is provided but not created, it will automatically create the folder.
+# If nothing is specified, it will save it in a 'Downloader/*' folder of the script folder.
+# Twitter's API JSON responses
+json_save_location =  
+# log data including compiled lists
+log_save_location = 
+# folder that stores all downloaded pictures
+# if multiple accounts are given, it will create a folder with the username of the account
+picture_save_location = 
+
+[TWITTER]
+# Exclude downloads of the twitter profile by removing them from this list 
+# Additonally, you can put # in front of the name(in a new line), in case you wanna put it back again
+# Don't forget commas, they're crucial for this program to work.
+# Oh yeah, giving the wrong username may result in you downloading the wrong media from the wrong account....
+twitter_usernames = @anju_inami, @Rikako_Aida, @aikyan_, @furihata_ai, @suwananaka, @aina_suzuki723, @kanako_tktk, @saito_shuka, @box_komiyaarisa
+
+# ====== LLSS Seiyu Twitter Downloader ======= #
+[Seiyuu Twitter]
+# How many of status to go through for each account(0 for unlimited)
+items = 0
+# parser will go through the JSON responses and parse for media links
+parser = True
+# downloader will download the media links that parser has compiled. Forces parser to True
+downloader = True
+# This will cretea a folder /data on the folder *if* a custom location is given. json, list of links, and log will be stored in this folder.
+# Otherwise, it will be stored in the current directory that the script is working on.
+data_loc_in_pic_folder = True
+
+[Twitter Usernames]
+# If you wish to not update specific seiyuu, put a '#' in front of them and the script will ignore it(vice versa)
+inami_anju = @anju_inami
+saito_shuka = @saito_shuka
+aida_rikako = @Rikako_Aida
+kobayashi_aika = @aikyan_
+suzuki_aina = @aina_suzuki723
+suwa_nanaka  = @suwananaka
+komiya_arisa = @box_komiyaarisa
+furihata_ai = @furihata_ai
+#takatsuki_kanako = @kanako_tktk
+
+[Picture Save Location]
+# In case you want the script to save the files into a different location, insert them here
+# If the input is empty, it will default to the a folder in the location that your command-prompt is opened in(or where script is ran on)
+# Noteable folders are : C:\Users\<yourname>\Downloader\pictures (if you launch cmd from start menu)
+inami_anju = 
+saito_shuka = 
+aida_rikako = 
+kobayashi_aika = 
+suzuki_aina = 
+suwa_nanaka = 
+komiya_arisa = 
+furihata_ai = 
+takatsuki_kanako = 
+# =========================================== #
+
+[INSTAGRAM]
+# To be implemented : currently useless
+instagram_uersnames = aida_rikako_, kyanstagram_, furihatagram, kanako.tktk, anju_inami, 
+
+[AMEBLO]
+# To be implemented : currently useless
+shuukashu =
+anju =
+
+[LINE_BLOG]
+# To be implemented : currently useless
+aikyan = 
+anju = 
+
+[SPECIAL_BLOG]
+# To be implemented : currently useless
+arisha = 

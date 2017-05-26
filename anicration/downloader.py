@@ -4,15 +4,20 @@ Handles the parsing of links for downloading.
 Provides the necessary information to help with saving of files(names) and status report.
 """
 import os
+import sys
 import logging
+
+from time import sleep
+
 import requests
+
+from .auxiliaryfuncs import _v_print
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('%(levelname)s:%(name)s:%(asctime)s:%(message)s')
 
-# You may add more types for the system to pick it up and download it
 FILE_EXTENSIONS = ('.png', '.jpg', '.mp4')
 
 def _folder_check_empty(folder_location, folder_name='Downloader', type_='pics', make_folder=True):
@@ -25,17 +30,16 @@ def _folder_check_empty(folder_location, folder_name='Downloader', type_='pics',
         logger.info('No '+ str(type_)
                     + ' folder location specified. Defaulting to '
                     + os.path.join(folder_name, str(type_)))
-        print('No', str(type_), 'folder location specified.')
+        _v_print('No', str(type_), 'folder location specified.', verbosity=2, level=None)
         if os.path.exists(folder_path):
             return os.path.join(folder_path)
         else:
             try:
                 os.makedirs(folder_path)
             except FileExistsError:
-                logger.info('Folder already exist : ' + folder_path)
+                _v_print('Folder already exist : ' + folder_path, verbosity=2)
             else:
-                print('Folder', type_, 'created')
-                logger.info('Created folder ' + folder_path)
+                _v_print('Created folder ' + folder_path, verbosity=1)
                 return os.path.join(folder_path)
     else:
         if not os.path.exists(folder_location):
@@ -46,8 +50,7 @@ def _folder_check_empty(folder_location, folder_name='Downloader', type_='pics',
                 logger.critical('No permission to create folder at ' + folder_location)
                 raise
             else:
-                print('Folder', type_, 'created')
-                logger.info('Created folder ' + folder_location)
+                _v_print('Created folder ' + folder_location)
         return folder_location
 
 def _percent_former(curr, leng):
@@ -95,6 +98,22 @@ def _get_media_name(link):
         if link[j] == '/':
             return link[abs(j) + 1:]
 
+def _media_request(link):
+    """Requests links, handle HTTPError or ConnectionError up to 3 retries"""
+    retry = 1
+    while retry != 3:
+        try:
+            media_res = requests.get(link)
+            media_res.raise_for_status()
+        except (requests.ConnectionError, requests.HTTPError, requests.ConnectTimeout):
+            print('Download failed. Retrying ({}/3) in {} seconds'.format(retry, retry*5), end='\r')
+            sleep(retry*5)
+            retry = retry + 1
+        else:
+            return media_res
+    print('Maximum retry exceeded, exiting program...')
+    sys.exit(1)
+
 # TODO : Break this function into even smaller functions
 def _media_download(twimg_list, save_location, log_obj=None):
     """Downloads photo/video from the twimg list compiled. Logs given a file-like object"""
@@ -114,19 +133,13 @@ def _media_download(twimg_list, save_location, log_obj=None):
             if media.lower().endswith('.jpg'):
                 _status_print('Downloading ' + media_name, percent, save_location)
                 # only .jpg have different sizes (:large, :small)
-                media_res = requests.get(media + ':orig')
+                media_link = media + ':orig'
             elif media.lower().endswith(('.png', '.mp4')):
                 _status_print('Downloading ' + media_name, percent, save_location)
-                media_res = requests.get(media)
+                media_link = media
 
-            try:
-                media_res.raise_for_status()
-            except (ConnectionError, requests.HTTPError) as err:
-                logger.exception('Connection or HTTP Error %s', str(err))
-                # TODO : Implement retrying
-                print('Connection error or HTTP Error excepted. Skipping current file...')
-            else:
-                _requests_save(media_res, os.path.join(save_location, media_name))
+            media_res = _media_request(media_link)
+            _requests_save(media_res, os.path.join(save_location, media_name))
 
         if not log_obj is None:
             log_obj.write(message + '\n')
@@ -145,4 +158,4 @@ def parser_downloader(file, save_location=None):
         links_list[idx] = link.strip()
     _folder_check_empty(save_location)
     _media_download(links_list, save_location)
-    print('Completed')
+    _v_print('Completed')

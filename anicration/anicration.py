@@ -7,15 +7,16 @@ import sys
 import logging
 import argparse
 import re
-import json
 
-import tweepy
-import requests
-
+from .auxiliaryfuncs import _v_print, _set_verbosity
 from .seiyuuhandler import seiyuu_twitter, twitter_media_downloader, config_create
 from .confighandler import ConfigHandler
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+INFO = logger.info
+DEBUG = logger.debug
+WARNING = logger.warning
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config', 'example.txt')
 TWITTER_USERNAMES = ['@anju_inami', '@Rikako_Aida', '@aikyan_', '@furihata_ai', '@suwananaka',
                      '@aina_suzuki723', '@kanako_tktk', '@saito_shuka', '@box_komiyaarisa']
@@ -53,7 +54,8 @@ def argument_create():
         action="count", default=0, help="Increase verbosity level. Not Yet Implemented")
     verbosity.add_argument(
         '-q', '--quiet',
-        action="store_true", default=False, help="Just keep it down low, everything. Not Yet Implemneted")
+        action="store_true", default=False,
+        help="Just keep it down low, everything. Not Yet Implemneted")
 
     download = parser.add_mutually_exclusive_group()
     download.add_argument(
@@ -108,6 +110,50 @@ def _regex_twitname(args):
                 logger.info('twitter_id : ' + twitter_id)
             return username
 
+def _store_type(args, payload):
+    if args.json_only:
+        payload['json_save'] = True
+        payload['parser'] = (False, False)
+        payload['downloader'] = False
+    elif args.link_only:
+        payload['json_save'] = False
+        payload['parser'] = (True, True)
+        payload['downloader'] = False
+    elif args.media_only:
+        payload['json_save'] = False
+        payload['parser'] = (True, False)
+        payload['downloader'] = True
+    elif args.config is None:
+        pass
+    else:
+        payload['json_save'] = True
+        payload['parser'] = (True, True)
+        payload['downloader'] = True
+    return payload
+
+def _get_mode(args, payload, config):
+    if args.twitter:
+        payload['auth_keys'] = config.auth_keys
+        if args.verbose >= 2:
+            _print_payload(payload)
+        try:
+            twitter_media_downloader(**payload)
+        except KeyboardInterrupt:
+            print('\nERROR : User interrupted the program')
+            sys.exit(1)
+        else:
+            print('Complete')
+            sys.exit(0)
+    elif args.instagram:
+        print("Instagram mode...")
+    elif args.blog:
+        print("Blog mode...")
+
+def _print_payload(payload):
+    """Prints payload dict() for debug purposes."""
+    for keyword in payload:
+        print(keyword, ":", payload[keyword])
+
 def args_handler(args):
     """Handle parsed arguments"""
     payload = dict()
@@ -115,12 +161,19 @@ def args_handler(args):
     # quick and dirty silent mode
     if args.quiet:
         sys.stdout = open(os.devnull, 'a')
+    if args.verbose >= 2:
+        _v_print('Debug mode...')
+        cmdl_out = logging.StreamHandler()
+        cmdl_out.setLevel(logging.DEBUG)
+        fmt = logging.Formatter('%(message)s')
+        cmdl_out.setFormatter(fmt)
+        logger.addHandler(cmdl_out)
 
     # ConfigHandler() exists if it doesn't find a file, so this come first.
     if args.config == 'create':
-        print('Creating config...')
+        _v_print('Creating config...', verbosity=1)
         config_create()
-        print('Config created.')
+        _v_print('Config created.', verbosity=0)
         sys.exit(0)
 
     config_mode = False
@@ -133,8 +186,7 @@ def args_handler(args):
     # 0 is when -c is not even called.
     if args.config is not 0:
         config = ConfigHandler(args.config)
-        print('Config mode...')
-        print('Auto-enabling Twitter Mode.')
+        _v_print('Config Mode, auto-enabling Twitter mode.', verbosity=1)
         args.twitter = True
         config_mode = True
         payload = {
@@ -159,7 +211,9 @@ def args_handler(args):
         _loc_set(args.location)
     elif config_mode is True:
         # maybe another way to handle, but this is the way I'll go for now
-        print('No website link is provided, defaulting to twitter_usernames in config.')
+        _v_print(
+            'No website link is provided, defaulting to twitter_usernames in config.',
+            verbosity=1)
 
     # in case of a non-default --items integer is given
     if not args.items is None:
@@ -170,31 +224,14 @@ def args_handler(args):
         pass
 
     # for the x_only and config default override avoidance.
-    if args.json_only:
-        payload['json_save'] = True
-        payload['parser'] = (False, False)
-        payload['downloader'] = False
-    elif args.link_only:
-        payload['json_save'] = False
-        payload['parser'] = (True, True)
-        payload['downloader'] = False
-    elif args.media_only:
-        payload['json_save'] = False
-        payload['parser'] = (True, False)
-        payload['downloader'] = True
-    elif args.config is None:
-        pass
-    else:
-        payload['json_save'] = True
-        payload['parser'] = (True, True)
-        payload['downloader'] = True
+    payload = _store_type(args, payload)
 
     if args.downloader:
         _loc_set()
-        print('Storing all files in', os.path.join(os.getcwd(), 'Downloader'))
+        _v_print('Storing all files in', os.path.join(os.getcwd(), 'Downloader'))
     elif args.current:
         _loc_set(os.getcwd())
-        print('Storing all files in ', os.getcwd())
+        _v_print('Storing all files in ', os.getcwd())
     elif args.data:
         _loc_set(os.path.join(os.getcwd(), 'data'))
         payload['pic_loc'] = os.getcwd()
@@ -205,57 +242,18 @@ def args_handler(args):
     payload['config'] = args.config
 
     # triggers
-    if args.twitter:
-        print("Twitter mode...")
-        payload['auth_keys'] = config.auth_keys
-        if args.verbose >= 2:
-            _print_payload(payload)
-        try:
-            twitter_media_downloader(**payload)
-        except KeyboardInterrupt:
-            print('\nERROR : User interrupted the program')
-            sys.exit(1)
-        else:
-            print('Complete')
-            sys.exit(0)
-    elif args.instagram:
-        print("Instagram mode...")
-    elif args.blog:
-        print("Blog mode...")
+    _get_mode(args, payload, config)
     return payload
-
-def _print_payload(payload):
-    """Prints payload dict() for debug purposes."""
-    for kw in payload:
-        print(kw, ":", payload[kw])
-
-# TODO : parser/downloader to take in a to-download value
-# TODO : CONSIDEARTION FOR DEPREACTION
-def payload_parser(parser, downloader, path, auth_keys, items, usernames):
-    """Creates a payload for the twitter_media_downloader()."""
-    config = ConfigHandler(path)
-    auth_keys = config.auth_keys
-    payload = {
-        'json_save' : True,
-        'init_logging' : True, # NYI
-        'keys_from_args' : True, # TBD
-        'auth_keys' : auth_keys, # pass in a tuple(or list) of keys
-        'twitter_username' : '@anju_inami',
-        'items' : items,
-        'parser' : parser,
-        'downloader' : downloader,
-        'json_loc' : path,
-        'log_loc' : path,
-        'pic_loc' : path
-    }
 
 def main():
     """Does the magic of command-line calling."""
     # Get all the varaibles
     args = argument_create()
+    # Set verbosity level
+    _set_verbosity(args.verbose)
     # Handle all the variables
     if not len(sys.argv) > 1:
-        print('Defaulting to seiyuu_twitter()...')
+        _v_print('Defaulting to seiyuu_twitter()...', level=None)
         seiyuu_twitter()
     else:
         logging.basicConfig(filename='anicration.txt', level=logging.INFO)

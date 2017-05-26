@@ -3,13 +3,19 @@ from distutils.core import setup
 
 setup(
     name='anicration',
-    version='0.0.6alpha0',
+    version='0.6.0dev0',
     description="Allows one to download LLSS Seiyuu's pictures with command prompt.",
     author='corruptedant',
     author_email='corruptedant@gmail.com',
     license='MIT',
     packages=['anicration',],
     long_description=open('README').read(),
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.6',
+    ],
+    keywords='twitter lovelive',
     install_requires=[
         "Tweepy >= 3.5.0",
         "requests >= 2.13.0",

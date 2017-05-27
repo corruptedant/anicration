@@ -114,7 +114,6 @@ def _media_request(link):
     print('Maximum retry exceeded, exiting program...')
     sys.exit(1)
 
-# TODO : Break this function into even smaller functions
 def _media_download(twimg_list, save_location, log_obj=None):
     """Downloads photo/video from the twimg list compiled. Logs given a file-like object"""
     length = len(twimg_list)
@@ -152,8 +151,8 @@ def pic_downloader(twimg_list: list, save_location=None):
 
 def parser_downloader(file, save_location=None):
     """File refers to the the file that contains the links."""
-    with open(file, 'r', encoding='utf-8') as f:
-        links_list = _file_parser(f)
+    with open(file, 'r', encoding='utf-8') as link_file:
+        links_list = _file_parser(link_file)
     for (idx, link) in enumerate(links_list):
         links_list[idx] = link.strip()
     _folder_check_empty(save_location)

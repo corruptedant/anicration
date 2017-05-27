@@ -20,13 +20,14 @@ from datetime import datetime
 
 import tweepy
 
-from .auxiliaryfuncs import _v_print
+from .auxiliaryfuncs import _v_print, _set_verbosity
 from .mediaparser import media_parser
 from .confighandler import ConfigHandler
 from .downloader import pic_downloader
 from .downloader import _folder_check_empty
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 BASE_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config', 'example.txt')
 
 def config_create(file_location=None, file_name='config.txt'):
@@ -71,17 +72,22 @@ def _tweepy_retry(function=None, msg='', *errors):
             if function is not None:
                 return function()
         except tweepy.TweepError:
-            print(
+            _v_print(
                 '{} failed ({}/{}), retrying in {} seconds'.format(
                     msg, retry, MAX_RETRY, (retry + 1)*5
                 ),
-                end='\r'
+                verbosity=0, level=logger.debug, end='\r'
             )
             sleep((retry+1)*5)
             retry = retry + 1
         else:
             print('')
-    print('\nMaximum retry exceeded, stopping program...            ')
+    _v_print(
+        '\nMaximum retry exceeded, stopping program...            ',
+        verbosity=1, logger=None)
+    logger.critical(
+        'Maximum retry at {} with message {}, stopping program.'.format(str(function), msg)
+        )
     sys.exit(1)
 
 def _get_json(api, twitter_id: str, items: int):
@@ -93,7 +99,10 @@ def _get_json(api, twitter_id: str, items: int):
         json_num = int()
         for (idx, status) in enumerate(_get_cursor().items(items)):
             json_data = json_data + json.dumps(status._json, ensure_ascii=False) + ','
-            print('Retrived', str(idx + 1), 'JSON responses.', end='\r')
+            _v_print(
+                'Retrived', str(idx + 1), 'JSON responses.',
+                verbosity=1, level=None, end='\r'
+            )
             json_num = idx + 1
         return json_data, json_num
     json_data, json_num = _tweepy_retry(_get_status, 'JSON retrieving')
@@ -167,6 +176,7 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
     print('A config file will be created at ', os.path.join(os.getcwd(), 'seiyuu_twitter.txt'))
     logging.info("{:%Y/%m/%d %H:%M:%S}".format(datetime.now()))
     config = ConfigHandler(custom_config_path)
+    _set_verbosity(0 if config.verbosity == 0 else config.verbosity - 1)
     for kw in config.twitter_id_loc:
         data_loc = None
         if config.data_in_pic_loc is True:
@@ -228,7 +238,7 @@ def track_twitter_info(custom_config_path=None, no_wait=False):
         # cleaning stuffs
         dt_after = datetime.now() - dt_before
         _v_print('Sucessfully downloaded user data :', file_name,
-                 '. Process took :', str(dt_after.total_seconds()), 'seconds',level=tsi.info)
+                 '. Process took :', str(dt_after.total_seconds()), 'seconds', level=tsi.info)
     if no_wait is True:
         get_user_data()
     while True:

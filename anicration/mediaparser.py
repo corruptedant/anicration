@@ -7,7 +7,10 @@ QuoteParser has extra features as well, it's *for api purposes*.
 import json
 import logging
 
+from .auxiliaryfuncs import _v_print
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class QuoteParser():
     """Simplifies the need for quoted data."""
@@ -60,8 +63,10 @@ def _compare_bitrate_data(variants: list):
         try:
             bitrate[str(idx)] = variants_obj['bitrate']
         except KeyError:
-            logger.warning('video_handler() -- KeyError at %s', str(idx))
-            #print('video_handler() -- KeyError at ', str(idx)) TODO -- Verbose mode
+            _v_print(
+                'video_handler() -- KeyError at %s', str(idx),
+                verbosity=2, level=logging.debug
+            )
             continue
     return [variants[int(max(bitrate, key=lambda key: bitrate[key]))]['url']]
 
@@ -153,13 +158,12 @@ def get_media_link(status, https=True, err=False):
 def media_parser(json_data: str, log_path: str, log_create=True):
     """json_data needs to be a string(file.read()). The script will do the loading.
     Only reads a compiled Twitter API responses status arranged in a list : [{},{},{}]"""
-    # TODO : Implement exception and raising
     tweets = json.loads(json_data)
 
     try:
         tweets[0]
     except KeyError:
-        logger.exception('Invalid Tweet JSON data, exiting program...')
+        _v_print('Invalid Tweet JSON data, exiting program...', verbosity=0, level=logger.exception)
         raise
 
     media_links = list()
@@ -167,7 +171,7 @@ def media_parser(json_data: str, log_path: str, log_create=True):
         try:
             media_links.extend(_ext_ett_handler(tweet['extended_entities'], True))
         except KeyError:
-            logger.debug("No media at status %d", idx)
+            logger.debug("No media at status number %d", idx)
 
     if log_create is True:
         with open(log_path, 'w', encoding="utf-8") as file:

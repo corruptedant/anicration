@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Handles config input parsing and creating a class to store all the information.\n
 It's one solution that I currently find better than just trying to have configparser everywhere.
@@ -42,6 +43,7 @@ class ConfigHandler():
         self.twitter_usernames = _str_parser(config['TWITTER']['twitter_usernames'], pop_check=True)
 
         # [Seiyuu Twitter]
+        self.verbosity = config.getint('Seiyuu Twitter', 'verbosity')
         self.data_in_pic_loc = config.getboolean('Seiyuu Twitter', 'data_loc_in_pic_folder')
         self.parser = config.getboolean('Seiyuu Twitter', 'parser')
         self.downloader = config.getboolean('Seiyuu Twitter', 'downloader')

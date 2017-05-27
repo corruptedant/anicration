@@ -41,6 +41,9 @@ downloader = True
 # This will cretea a folder /data on the folder *if* a custom location is given. json, list of links, and log will be stored in this folder.
 # Otherwise, it will be stored in the current directory that the script is working on.
 data_loc_in_pic_folder = True
+# Verbosity level
+# 0 - quiet, 1 - progress bar, 2 - info, 3 - debug
+verbosity = 2
 
 [Twitter Usernames]
 # If you wish to not update specific seiyuu, put a '#' in front of them and the script will ignore it(vice versa)

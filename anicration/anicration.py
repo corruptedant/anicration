@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Handles command-line argument and parsing the data to functions.\n
 Documentation of the arguments can be found in the wiki of the github page.
@@ -101,7 +102,7 @@ def _regex_twitname(args):
         regrex = r'^([@]?)' + re.escape(args.website)
         args.twitter = True
         if re.search(regrex, username, re.IGNORECASE):
-            print('Twitter username found, engaging twitter mode.')
+            _v_print('Twitter username found, engaging twitter mode.', verbosity=1)
             if username[0] != '@':
                 twitter_id = '@' + username
                 logger.info('twitter_id : ' + twitter_id)
@@ -161,7 +162,7 @@ def args_handler(args):
     # quick and dirty silent mode
     if args.quiet:
         sys.stdout = open(os.devnull, 'a')
-    if args.verbose >= 2:
+    elif args.verbose >= 2:
         _v_print('Debug mode...')
         cmdl_out = logging.StreamHandler()
         cmdl_out.setLevel(logging.DEBUG)

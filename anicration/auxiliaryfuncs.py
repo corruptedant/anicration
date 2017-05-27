@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
 """Globally used functions(or frequently used functions)"""
 
 import logging
 import sys
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 VERBOSITY = 1
 

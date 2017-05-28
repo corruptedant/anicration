@@ -48,6 +48,31 @@ def config_create(file_location=None, file_name='config.txt'):
         with open(os.path.join(file_location, file_name), 'w', encoding='utf-8') as f2:
             f2.write(f.read())
 
+def _tweepy_retry(function=None, msg='', max_retry=3):
+    retry = 0
+    while retry != max_retry + 1:
+        try:
+            if function is not None:
+                return function()
+        except tweepy.TweepError:
+            _v_print(
+                '{} failed ({}/{}), retrying in {} seconds'.format(
+                    msg, retry, max_retry, (retry + 1)*5
+                ),
+                verbosity=0, level=logger.debug, end='\r'
+            )
+            sleep((retry+1)*5)
+            retry = retry + 1
+        else:
+            _v_print('', verbosity=3, level=None, end='\r')
+    _v_print(
+        '\nMaximum retry exceeded, stopping program...            ',
+        verbosity=1, logger=None)
+    logger.critical(
+        'Maximum retry at {} with message {}, stopping program.'.format(str(function), msg)
+        )
+    sys.exit(1)
+
 def _tweepy_init(auth_keys):
     # Tweepy authentication and initiation
     try:
@@ -59,36 +84,9 @@ def _tweepy_init(auth_keys):
         raise err
 
     return _tweepy_retry(
-        function=lambda: tweepy.API(
-            auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True
-        )
+        function=lambda: tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True),
+        msg='Tweepy initiation'
     )
-
-def _tweepy_retry(function=None, msg='', *errors):
-    retry = 0
-    MAX_RETRY = 3
-    while retry != MAX_RETRY + 1:
-        try:
-            if function is not None:
-                return function()
-        except tweepy.TweepError:
-            _v_print(
-                '{} failed ({}/{}), retrying in {} seconds'.format(
-                    msg, retry, MAX_RETRY, (retry + 1)*5
-                ),
-                verbosity=0, level=logger.debug, end='\r'
-            )
-            sleep((retry+1)*5)
-            retry = retry + 1
-        else:
-            print('')
-    _v_print(
-        '\nMaximum retry exceeded, stopping program...            ',
-        verbosity=1, logger=None)
-    logger.critical(
-        'Maximum retry at {} with message {}, stopping program.'.format(str(function), msg)
-        )
-    sys.exit(1)
 
 def _get_json(api, twitter_id: str, items: int):
     def _get_cursor():
@@ -110,9 +108,9 @@ def _get_json(api, twitter_id: str, items: int):
     logger.info('Retrived ' + str(json_num) + ' JSON responses')
     json_data = json_data[:len(json_data)-1] + ']'
     return json_data
-
+# TODO : Deprecate *auth_keys and go full kwargs['auth_keys'] only
 def twitter_media_downloader(*auth_keys, **kwargs):
-    """TODO : Deprecate *auth_keys and go full kwargs['auth_keys'] only"""
+    """Downloads twitter media from an account. All variables are pass in kwargs. Refer to wiki."""
     if any(auth_keys) is False:
         try:
             auth_keys = kwargs['auth_keys']
@@ -139,7 +137,6 @@ def twitter_media_downloader(*auth_keys, **kwargs):
     # Defaults to twitter_id(without the '@')
     file_name = twitter_id[1:].lower()
     date_ext = "-{:%y%m%d%H%M%S}".format(datetime.now())
-    # Twitter ID
     _v_print('Twitter id:', twitter_id)
 
     # pic_path is the folder the the pic will be stored in, psuedomeaning == final loc
@@ -200,7 +197,6 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
             sys.exit(1)
     print('Complete')
 
-# TODO : Error handling so that it doesn't exit program due to ConnectionError ot HTTPError or etc.
 def track_twitter_info(custom_config_path=None, no_wait=False):
     """Does an hourly download of the seiyuu's info."""
     print('Initializing track_seiyuu_info()...')
@@ -229,7 +225,9 @@ def track_twitter_info(custom_config_path=None, no_wait=False):
         for username in seiyuu_names:
             print('Currenting downloading media from :', username, '              ', end='\r')
             tsi.info('Obtaining user_data from ' + username)
-            user_data = api.get_user(username)
+            user_data = _tweepy_retry(
+                function=lambda um=username: api.get_user(um), msg='Username retriving'
+            )
             json_data = json_data + json.dumps(user_data._json, ensure_ascii=False) + ','
         json_data = json_data[:len(json_data)-1] + ']'
         with open(file_name, 'w', encoding='utf-8') as file:

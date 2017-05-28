@@ -87,29 +87,11 @@ def _video_handler(medias: list):
 
 def _ext_ett_handler(ext_ett: dict, https: bool):
     """Stands for `extended_entity_handler()`. Accepts only `extended_entities` objects."""
-    # TODO : Should I let the programmer do their own try:.. except: block?
-    try:
-        # checks if the media actually have content
-        medias = ext_ett['media']
-    except KeyError:
-        logger.exception('entity_handler -- Empty Object Given')
-        print('WARNING: entity_handler -- Empty Object Given')
-        return None
-
-    try:
-        # for now it only checks if the first one is a photo or video
-        media_type = medias[0]['type']
-    except KeyError:
-        logging.warning('entity_handler -- no "type" attribute')
-        #print('Error : entity_handler -- no "type" attribute') TODO -- Verbose mode
-        return None
-    else:
-        # determine the type and send to their respective handlers
-        if media_type == 'photo':
-            return _photo_handler(medias, https)
-        elif media_type == 'video':
-            return _video_handler(medias)
-    return None
+    media_type = ext_ett['media'][0]['type']
+    if media_type == 'photo':
+        return _photo_handler(ext_ett['media'], https)
+    elif media_type == 'video':
+        return _video_handler(ext_ett['media'])
 
 def get_quoted_data(status, https=True, silent_ignore=True):
     """Returns `QuoteParser` object.\n
@@ -135,7 +117,7 @@ def get_video_thumbnail(status, https=True):
     except KeyError:
         return None
 
-def get_media_link(status, https=True, err=False):
+def get_media_link(status, https=True):
     """Return a `list` of media link from a single status(photo or video).\n
     Receives a parsed `status` JSON data. Does handle `str` status, but no guarantee.\n
     If `https` is `True`, then obtains the https version of the photo.\n
@@ -143,17 +125,19 @@ def get_media_link(status, https=True, err=False):
     try:
         media_links = _ext_ett_handler(status['extended_entities'], https)
     except (ValueError, KeyError):
-        if err:
-            print('Error : get_media_link() ValueError or KeyError detected -- ')
+        _v_print('Error : get_media_link() ValueError or KeyError detected -- ')
     except TypeError:
-        # TODO : automatically load the JSON or raise an exception?
-        print('WARNING : Did you pass in a non-json parsed string?')
-        logger.exception('get_media_link() error.')
-        media_links = _ext_ett_handler(json.loads(status)['extended_entities'], https)
+        _v_print('WARNING : Did you pass in a non-json parsed string?', verbosity=0, level=None)
+        logger.exception('get_media_link() TypeError.')
+        try:
+            media_links = _ext_ett_handler(json.loads(status)['extended_entities'], https)
+        except json.JSONDecodeError:
+            _v_print('Invalid JSON.', verbosity=0, level=logger.exception)
+            raise
         return media_links
     else:
         return media_links
-    return None
+    raise RuntimeError
 
 def media_parser(json_data: str, log_path: str, log_create=True):
     """json_data needs to be a string(file.read()). The script will do the loading.

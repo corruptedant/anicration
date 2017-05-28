@@ -16,8 +16,6 @@ from .auxiliaryfuncs import _v_print
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(levelname)s:%(name)s:%(asctime)s:%(message)s')
-
 FILE_EXTENSIONS = ('.png', '.jpg', '.mp4')
 
 def _folder_check_empty(folder_location, folder_name='Downloader', type_='pics', make_folder=True):

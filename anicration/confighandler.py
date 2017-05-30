@@ -47,6 +47,7 @@ class ConfigHandler():
         self.data_in_pic_loc = config.getboolean('Seiyuu Twitter', 'data_loc_in_pic_folder')
         self.parser = config.getboolean('Seiyuu Twitter', 'parser')
         self.downloader = config.getboolean('Seiyuu Twitter', 'downloader')
+        self.no_config = config.getboolean('Seiyuu Twitter', 'config')
         try:
             self.items = config.getint('Seiyuu Twitter', 'items')
         except ValueError:

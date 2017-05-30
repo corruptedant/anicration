@@ -44,6 +44,8 @@ data_loc_in_pic_folder = True
 # Verbosity level
 # 0 - quiet, 1 - progress bar, 2 - info, 3 - debug
 verbosity = 2
+# True creates a config file every time anicration mode is called, false does not.
+config = True
 
 [Twitter Usernames]
 # If you wish to not update specific seiyuu, put a '#' in front of them and the script will ignore it(vice versa)

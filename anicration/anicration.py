@@ -86,7 +86,7 @@ def argument_create():
         nargs='?', type=str, help="the web address of the profile page")
     parser.add_argument(
         "location",
-        nargs='?', type=str, help="where to save the file(default : current directory)")
+        nargs='*', type=str, help="where to save the file(default : current directory)")
     return parser.parse_args()
 
 def _link_parser(link):
@@ -111,7 +111,7 @@ def _regex_twitname(args):
                 logger.info('twitter_id : ' + twitter_id)
             return username
 
-def _store_type(args, payload):
+def _files_to_save(args, payload):
     if args.json_only:
         payload['json_save'] = True
         payload['parser'] = (False, False)
@@ -170,7 +170,7 @@ def args_handler(args):
         cmdl_out.setFormatter(fmt)
         logger.addHandler(cmdl_out)
 
-    # ConfigHandler() exists if it doesn't find a file, so this come first.
+    # ConfigHandler() crashes if it doesn't find a file, so this come first.
     if args.config == 'create':
         _v_print('Creating config...', verbosity=1)
         config_create()
@@ -209,7 +209,6 @@ def args_handler(args):
         if 'twitter' in args.website:
             payload['twitter_id'] = '@' + _link_parser(args.website)
             args.twitter = True
-        _loc_set(args.location)
     elif config_mode is True:
         # maybe another way to handle, but this is the way I'll go for now
         _v_print(
@@ -225,17 +224,23 @@ def args_handler(args):
         pass
 
     # for the x_only and config default override avoidance.
-    payload = _store_type(args, payload)
+    payload = _files_to_save(args, payload)
 
-    if args.downloader:
-        _loc_set()
-        _v_print('Storing all files in', os.path.join(os.getcwd(), 'Downloader'))
-    elif args.current:
-        _loc_set(os.getcwd())
-        _v_print('Storing all files in ', os.getcwd())
-    elif args.data:
-        _loc_set(os.path.join(os.getcwd(), 'data'))
-        payload['pic_loc'] = os.getcwd()
+    def _store_type(args, prefix=''):
+        if args.downloader:
+            _loc_set()
+            _v_print('Storing all files in', os.path.join(prefix, 'Downloader'))
+        elif args.data:
+            _loc_set(os.path.join(prefix, 'data'))
+            payload['pic_loc'] = prefix
+        elif args.current:
+            _loc_set(os.getcwd())
+            _v_print('Storing all files in ', os.getcwd())
+
+    if args.location:
+        _store_type(args, ' '.join(args.location))
+    else:
+        _store_type(args, os.getcwd())
 
     # temporary
     payload['website'] = args.website

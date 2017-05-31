@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name='anicration',
-    version='0.6.0dev3',
+    version='0.6.0dev4',
     description="Allows one to download LLSS Seiyuu's pictures with command prompt.",
     author='corruptedant',
     author_email='corruptedant@gmail.com',

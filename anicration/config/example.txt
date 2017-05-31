@@ -6,7 +6,7 @@
 
 [AUTHENTICATION]
 # Setting it to True will make the script read the authentication keys from `*kwargs` instead.
-keys_from_args = True
+keys_from_args = False
 # THE ORDER OF THE KEY IS IMPORTANT, IT HAS TO BE ARRANGED AS SHOWN BELOW
 # consumer_key, consumer_secret, auth_key, auth_secret
 keys = 

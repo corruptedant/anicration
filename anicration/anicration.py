@@ -262,8 +262,8 @@ def main():
         _v_print('Defaulting to seiyuu_twitter()...', level=None)
         seiyuu_twitter()
     else:
+        _v_print('A log file will be created at', os.getcwd(), verbosity=0, level=None)
         logging.basicConfig(filename='anicration.txt', level=logging.INFO)
-        logging.info('Engaging argument mode...')
         _print_payload(args_handler(args))
 
 if __name__ == "__main__":

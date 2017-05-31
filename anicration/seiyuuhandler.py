@@ -40,10 +40,17 @@ def config_create(file_location=None, file_name='config.txt'):
         try:
             os.makedirs(file_location)
         except FileExistsError:
-            _v_print('File ' + file_name + 'already exists at ' + file_location, verbosity=2)
+            _v_print('Folder', file_location, 'already exists.', verbosity=1, level=logger.info)
         else:
-            _v_print('File ' + file_name + 'already exists at ' + file_location, verbosity=2)
+            _v_print('Folder', file_location, 'created.', verbosity=1, level=logger.info)
     #__file__ is the file of the function installed, '.' means the location of __main__
+    if os.path.exists(os.path.join(file_location, file_name)):
+        print('A pre-existing file found. Overwrite? (Y/N) ', end='')
+        ans = input()
+        if ans.strip().lower() in ['yes', 'y', 'ya', 'yeah']:
+            pass
+        else:
+            sys.exit(0)
     with open(BASE_CONFIG_PATH, 'r', encoding='utf-8') as f:
         with open(os.path.join(file_location, file_name), 'w', encoding='utf-8') as f2:
             f2.write(f.read())
@@ -69,7 +76,7 @@ def _tweepy_retry(function=None, msg='', max_retry=3):
         '\nMaximum retry exceeded, stopping program...            ',
         verbosity=1, logger=None)
     logger.critical(
-        'Maximum retry at {} with message {}, stopping program.'.format(str(function), msg)
+        'Maximum retry at %s with message %s, stopping program.', str(function), msg
         )
     sys.exit(1)
 
@@ -81,7 +88,7 @@ def _tweepy_init(auth_keys):
     except IndexError as err:
         print('INDEXERROR : Did you miss a comma in your authentication keys?')
         logger.exception('Incomplete auth_keys \n%s', err)
-        raise err
+        sys.exit('Error can be found in log file.')
 
     return _tweepy_retry(
         function=lambda: tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True),
@@ -108,29 +115,22 @@ def _get_json(api, twitter_id: str, items: int):
     logger.info('Retrived ' + str(json_num) + ' JSON responses')
     json_data = json_data[:len(json_data)-1] + ']'
     return json_data
-# TODO : Deprecate *auth_keys and go full kwargs['auth_keys'] only
-def twitter_media_downloader(*auth_keys, **kwargs):
-    """Downloads twitter media from an account. All variables are pass in kwargs. Refer to wiki."""
-    if any(auth_keys) is False:
-        try:
-            auth_keys = kwargs['auth_keys']
-        except KeyError:
-            _v_print('Authentication keys is missing.', 0, logger.warning)
-        else:
-            _v_print('Sucessfully obtained keys from config.')
 
+def twitter_media_downloader(**kwargs):
+    """Downloads twitter media from an account. All variables are pass in kwargs. Refer to wiki."""
     items = kwargs.pop('items', 0)
     # Check the folders/locations
     json_loc = _folder_check_empty(kwargs.pop('json_loc', None), 'Downloader', 'json')
     log_loc = _folder_check_empty(kwargs.pop('log_loc', None), 'Downloader', 'log')
-    if kwargs['pic_loc'] == '' or kwargs['pic_loc']  is None:
-        subfolder_create = True
-    else:
-        subfolder_create = False
+    subfolder_create = True if kwargs['pic_loc'] == '' or kwargs['pic_loc']  is None else False
     # this is the master folder. more folders is created to sort by person
     pic_loc = _folder_check_empty(kwargs['pic_loc'], 'Downloader', 'pictures')
 
-    api = _tweepy_init(auth_keys)
+    try:
+        api = _tweepy_init(kwargs['auth_keys'])
+    except KeyError:
+        _v_print('Authentication keys is missing.', 0, logger.critical)
+        raise
 
     json_save = kwargs.pop('json_save', True)
     twitter_id = kwargs['twitter_id']
@@ -148,7 +148,6 @@ def twitter_media_downloader(*auth_keys, **kwargs):
 
     date = kwargs.pop('date', False)
     json_path = os.path.join(json_loc, file_name) + (date_ext if date is True else '') + '.json'
-
     json_data = _get_json(api, twitter_id, items)
 
     if json_save is True:
@@ -156,8 +155,8 @@ def twitter_media_downloader(*auth_keys, **kwargs):
             _v_print('Storing json file at ' + json_path, verbosity=None)
             file.write(json_data)
 
-    log_name = file_name +  (date_ext if date is True else '') + '.txt'
-    log_path = os.path.join(log_loc, log_name)
+    log_path = os.path.join(
+        log_loc, (file_name +  (date_ext if date is True else '') + '.txt'))
     if kwargs['parser'][0] is True:
         media_links = media_parser(json_data, log_path, kwargs['parser'][1])
         if kwargs['downloader'] is True:
@@ -256,9 +255,8 @@ def track_twitter_info(custom_config_path=None, no_wait=False):
             sleep(1)
         sleep(1)
 
-# TODO : Implement json_save
 def twit_dl_parser(config_mode=True, config_path=None, twitter_usernames=None, items=0, parser=True,
-                   downloader=True, json_save_location=None, log_save_location=None,
+                   downloader=True, json_save=True, json_save_location=None, log_save_location=None,
                    pic_save_location=None, **kwargs):
     """This method is not recommended. May be considered for deprecation as well."""
     if config_mode is True:
@@ -269,6 +267,7 @@ def twit_dl_parser(config_mode=True, config_path=None, twitter_usernames=None, i
             'items' : config.items,
             'parser' : config.parser,
             'downloader' : config.downloader,
+            'json_save' : json_save,
             'json_loc' : config.json_loc,
             'log_loc' : config.log_loc,
             'pic_loc' : config.pic_loc
@@ -282,6 +281,7 @@ def twit_dl_parser(config_mode=True, config_path=None, twitter_usernames=None, i
             'items' : items,
             'parser' : parser,
             'downloader' : downloader,
+            'json_save' : json_save,
             'json_loc' : json_save_location,
             'log_loc' : log_save_location,
             'pic_loc' : pic_save_location

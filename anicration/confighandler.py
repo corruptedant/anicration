@@ -5,8 +5,14 @@ It's one solution that I currently find better than just trying to have configpa
 """
 import os
 import sys
+import logging
 import configparser
 from configparser import ConfigParser
+
+from .auxiliaryfuncs import _v_print
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 SEIYUU_NAMES = ('inami_anju', 'saito_shuka', 'aida_rikako', 'kobayashi_aika', 'takatsuki_kanako',
                 'suzuki_aina', 'suwa_nanaka', 'komiya_arisa', 'furihata_ai')
@@ -53,12 +59,25 @@ class ConfigHandler():
         except ValueError:
             self.items = 0
         self.twitter_id_loc = dict()
-        # Generating a dict() of twitter id pic_location pair
-        for (idx, name) in enumerate(SEIYUU_NAMES):
-            if config.has_option('Twitter Usernames', name):
-                twitter_id = config['Twitter Usernames'][name]
-                pic_loc = config['Picture Save Location'][name].strip()
-                self.twitter_id_loc[twitter_id] = pic_loc
+        for (idx, key) in enumerate(config['Twitter Usernames'].keys()):
+            value = [x for x in config['Twitter Usernames'].values()][idx]
+            try:
+                self.twitter_id_loc[value] = config['Picture Save Location'][key]
+            except KeyError as err:
+                _v_print(
+                    'A missing parameter picture save location for ',
+                    err, ' detected. Defaulting to None.',
+                    verbosity='WARN', level=logger.warning
+                )
+                self.twitter_id_loc[config['Twitter Usernames'][key]] = None
+            else:
+                _v_print(
+                    'Sucessfully obtained', key, 'with value', value,
+                    verbosity=2, level=logger.debug)
+
+    def print_id_loc(self):
+        for (username, address) in self.twitter_id_loc:
+            print(username, address)
 
     @property
     def keys_from_args(self):

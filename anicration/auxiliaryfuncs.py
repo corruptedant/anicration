@@ -15,6 +15,8 @@ def _v_print(*values, verbosity=1, level=logger.info, **kwargs):
     sep = kwargs.pop('sep', ' ')
     if verbosity is None:
         pass
+    elif verbosity is 'WARN':
+        print('WARNING:', *values, sep=sep, end=kwargs.pop('end', '\n'), file=sys.stdout)
     elif VERBOSITY >= verbosity:
         print(*values, sep=sep, end=kwargs.pop('end', '\n'), file=sys.stdout)
     string = sep.join([str(value) for value in values])

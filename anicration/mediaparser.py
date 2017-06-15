@@ -65,7 +65,7 @@ def _compare_bitrate_data(variants: list):
         except KeyError:
             _v_print(
                 'video_handler() -- KeyError at %s', str(idx),
-                verbosity=2, level=logging.debug
+                verbosity=2, level=logger.debug
             )
             continue
     return [variants[int(max(bitrate, key=lambda key: bitrate[key]))]['url']]
@@ -108,20 +108,24 @@ def get_quoted_data(status, https=True, silent_ignore=True):
             raise
 
 def get_video_thumbnail(status, https=True):
-    """Obtains a video thumbnail of a status.\n Return `None` if empty status"""
+    """Obtains video thumbnail of a status. Return `None` if not a video status or empty status."""
     try:
-        if https:
-            return status['extended_entities']['media_url_https']
+        if status['extended_entities']['media'][0]['type'] != 'video':
+            return None
         else:
-            return status['extended_entities']['media_url']
+            if https:
+                return status['extended_entities']['media'][0]['media_url_https']
+            else:
+                return status['extended_entities']['media'][0]['media_url']
     except KeyError:
+        #_v_print()
+        logger.exception('get_video_thumnail(): KeyError excepted')
         return None
 
 def get_media_link(status, https=True):
     """Return a `list` of media link from a single status(photo or video).\n
     Receives a parsed `status` JSON data. Does handle `str` status, but no guarantee.\n
-    If `https` is `True`, then obtains the https version of the photo.\n
-    If `err` is `True`, it prints if an err is excepted"""
+    If `https` is `True`, then obtains the https version of the photo.\n"""
     try:
         media_links = _ext_ett_handler(status['extended_entities'], https)
     except (ValueError, KeyError):
@@ -137,7 +141,7 @@ def get_media_link(status, https=True):
         return media_links
     else:
         return media_links
-    raise RuntimeError
+    return None
 
 def media_parser(json_data: str, log_path: str, log_create=True):
     """json_data needs to be a string(file.read()). The script will do the loading.

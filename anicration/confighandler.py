@@ -65,8 +65,8 @@ class ConfigHandler():
                 self.twitter_id_loc[value] = config['Picture Save Location'][key]
             except KeyError as err:
                 _v_print(
-                    'A missing parameter picture save location for ',
-                    err, ' detected. Defaulting to None.',
+                    "Parameter 'picture save location' for",
+                    err, 'not found. Defaulting to None.',
                     verbosity='WARN', level=logger.warning
                 )
                 self.twitter_id_loc[config['Twitter Usernames'][key]] = None

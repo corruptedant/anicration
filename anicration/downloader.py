@@ -23,7 +23,7 @@ def _folder_check_empty(folder_location, folder_name='Downloader', type_='pics',
     Returns `os.path.join(folder_name, type_)` if so.
     Returns folder_location plus the folder name if pic_folder is `True`
     Otherwise Returns the folder_location only"""
-    if folder_location == '' or folder_location is None and make_folder is True:
+    if (folder_location == '' or folder_location is None) and make_folder is True:
         folder_path = os.path.join(folder_name, str(type_))
         logger.info('No '+ str(type_)
                     + ' folder location specified. Defaulting to '
@@ -41,6 +41,9 @@ def _folder_check_empty(folder_location, folder_name='Downloader', type_='pics',
                 return os.path.join(folder_path)
     else:
         if not os.path.exists(folder_location):
+            if make_folder is False:
+                logger.error('Folder ' + folder_location + 'does not exist.')
+                raise FileNotFoundError
             logger.info('Folder ' + folder_location + 'does not exist, making a folder.')
             try:
                 os.makedirs(folder_location)
@@ -112,8 +115,8 @@ def _media_request(link):
     print('Maximum retry exceeded, exiting program...')
     sys.exit(1)
 
-def _media_download(twimg_list, save_location, log_obj=None):
-    """Downloads photo/video from the twimg list compiled. Logs given a file-like object"""
+def _media_download(twimg_list, save_location):
+    """Downloads photo/video from the twimg list compiled."""
     length = len(twimg_list)
     # obtains the name of the media(by searching backwards until it hits a '/')
     for (idx, media) in enumerate(twimg_list):
@@ -138,10 +141,6 @@ def _media_download(twimg_list, save_location, log_obj=None):
             media_res = _media_request(media_link)
             _requests_save(media_res, os.path.join(save_location, media_name))
 
-        if not log_obj is None:
-            log_obj.write(message + '\n')
-    print('')
-
 def pic_downloader(twimg_list: list, save_location=None):
     """Checks if the folder is empty before initiating download."""
     _folder_check_empty(save_location)
@@ -155,4 +154,4 @@ def parser_downloader(file, save_location=None):
         links_list[idx] = link.strip()
     _folder_check_empty(save_location)
     _media_download(links_list, save_location)
-    _v_print('Completed')
+    _v_print('\nCompleted')

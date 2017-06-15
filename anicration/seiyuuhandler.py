@@ -56,29 +56,32 @@ def config_create(file_location=None, file_name='config.txt'):
             f2.write(f.read())
 
 def _tweepy_retry(function=None, msg='', max_retry=3):
-    retry = 0
+    retry = 1
+    exc = RuntimeError
     while retry != max_retry + 1:
         try:
             if function is not None:
                 return function()
-        except tweepy.TweepError:
+        except tweepy.TweepError as err:
+            exc = err
             _v_print(
-                '{} failed ({}/{}), retrying in {} seconds'.format(
-                    msg, retry, max_retry, (retry + 1)*5
+                '{} failed ({}/{}), retrying in {}s : {}'.format(
+                    msg, retry, max_retry, (retry - 1)*5, err.reason
                 ),
                 verbosity=0, level=logger.debug, end='\r'
             )
-            sleep((retry+1)*5)
+            logger.exception(err)
+            sleep((retry-1)*5)
             retry = retry + 1
         else:
             _v_print('', verbosity=3, level=None, end='\r')
     _v_print(
-        '\nMaximum retry exceeded, stopping program...            ',
+        'Maximum retry exceeded, stopping program...                      ',
         verbosity=1, logger=None)
     logger.critical(
         'Maximum retry at %s with message %s, stopping program.', str(function), msg
         )
-    sys.exit(1)
+    sys.exit(exc)
 
 def _tweepy_init(auth_keys):
     # Tweepy authentication and initiation
@@ -111,7 +114,7 @@ def _get_json(api, twitter_id: str, items: int):
             json_num = idx + 1
         return json_data, json_num
     json_data, json_num = _tweepy_retry(_get_status, 'JSON retrieving')
-    print('')
+    _v_print('', verbosity=1, level=None, end='\r')
     logger.info('Retrived ' + str(json_num) + ' JSON responses')
     json_data = json_data[:len(json_data)-1] + ']'
     return json_data
@@ -156,7 +159,8 @@ def twitter_media_downloader(**kwargs):
             file.write(json_data)
 
     log_path = os.path.join(
-        log_loc, (file_name +  (date_ext if date is True else '') + '.txt'))
+        log_loc, (file_name +  (date_ext if date is True else '') + '.txt')
+    )
     if kwargs['parser'][0] is True:
         media_links = media_parser(json_data, log_path, kwargs['parser'][1])
         if kwargs['downloader'] is True:
@@ -177,8 +181,11 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
     for kw in config.twitter_id_loc:
         data_loc = None
         if config.data_in_pic_loc is True:
-            data_loc = os.path.join(config.twitter_id_loc[kw], 'data')
+            data_loc = os.path.join(
+                config.twitter_id_loc[kw] if config.twitter_id_loc[kw] is not None else '', 'data'
+            )
         payload = {
+            # TODO : confirm no keys_From_args is needed
             'keys_from_args' : config.keys_from_args,
             'auth_keys': kwargs['auth_keys'] if config.keys_from_args is True else config.auth_keys,
             'twitter_id' : kw,      #keyword is the username
@@ -193,9 +200,9 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
         try:
             twitter_media_downloader(**payload)
         except KeyboardInterrupt:
-            print('ERROR : User interrupted the program.')
+            print('\nERROR : User interrupted the program.')
             sys.exit(1)
-    print('Complete')
+    print('\nComplete')
 
 def track_twitter_info(custom_config_path=None, no_wait=False):
     """Does an hourly download of the seiyuu's info."""

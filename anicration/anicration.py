@@ -205,9 +205,13 @@ def args_handler(args):
 
     # when a website value is not provided, access twitter_usernames.
     if not args.website is None:
+        # Temporary implementation since Instagram uses the same prefix for usernames['@']
         payload['twitter_id'] = _regex_twitname(args)
         if 'twitter' in args.website:
             payload['twitter_id'] = '@' + _link_parser(args.website)
+            args.twitter = True
+        elif '@' in args.website:
+            payload['twitter_id'] = args.website
             args.twitter = True
     elif config_mode is True:
         # maybe another way to handle, but this is the way I'll go for now

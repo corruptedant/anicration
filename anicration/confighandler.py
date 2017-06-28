@@ -54,28 +54,33 @@ class ConfigHandler():
         self.parser = config.getboolean('Seiyuu Twitter', 'parser')
         self.downloader = config.getboolean('Seiyuu Twitter', 'downloader')
         self.no_config = config.getboolean('Seiyuu Twitter', 'config')
+
         try:
             self.items = config.getint('Seiyuu Twitter', 'items')
         except ValueError:
             self.items = 0
-        self.twitter_id_loc = dict()
-        for (idx, key) in enumerate(config['Twitter Usernames'].keys()):
-            value = [x for x in config['Twitter Usernames'].values()][idx]
+
+    @property
+    def twitter_id_loc(self):
+        _twitter_id_loc = dict()
+        for (idx, key) in enumerate(self._config['Twitter Usernames'].keys()):
+            value = [x for x in self._config['Twitter Usernames'].values()][idx]
             try:
-                self.twitter_id_loc[value] = config['Picture Save Location'][key]
+                _twitter_id_loc[value] = self._config['Picture Save Location'][key]
             except KeyError as err:
                 _v_print(
                     "Parameter 'picture save location' for",
                     err, 'not found. Defaulting to None.',
                     verbosity='WARN', level=logger.warning
                 )
-                self.twitter_id_loc[config['Twitter Usernames'][key]] = None
+                _twitter_id_loc[self._config['Twitter Usernames'][key]] = None
             else:
                 _v_print(
                     'Sucessfully obtained', key, 'with value', value,
                     verbosity=2, level=logger.debug)
+        return _twitter_id_loc
 
-    def print_id_loc(self):
+    def _print_id_loc(self):
         for (username, address) in self.twitter_id_loc:
             print(username, address)
 

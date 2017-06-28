@@ -168,6 +168,7 @@ def twitter_media_downloader(**kwargs):
     elif kwargs['parser'][0] is False and kwargs['downloader'] is True:
         media_links = media_parser(json_data, log_path, kwargs['parser'][1])
         pic_downloader(media_links, pic_path)
+    _v_print('', verbosity=1, level=None)
 
 # One may call this and give it their own custom_config_path and **kwargs as well
 def seiyuu_twitter(custom_config_path=None, **kwargs):
@@ -178,11 +179,12 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
         print('A config file will be created at ', os.path.join(os.getcwd(), 'seiyuu_twitter.txt'))
         logging.info("{:%Y/%m/%d %H:%M:%S}".format(datetime.now()))
     _set_verbosity(0 if config.verbosity == 0 else config.verbosity - 1)
-    for kw in config.twitter_id_loc:
+    twitter_id_loc = config.twitter_id_loc
+    for kw in twitter_id_loc:
         data_loc = None
         if config.data_in_pic_loc is True:
             data_loc = os.path.join(
-                config.twitter_id_loc[kw] if config.twitter_id_loc[kw] is not None else '', 'data'
+                twitter_id_loc[kw] if twitter_id_loc[kw] is not None else '', 'data'
             )
         payload = {
             # TODO : confirm no keys_From_args is needed
@@ -194,7 +196,7 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
             'downloader' : config.downloader,
             'json_loc' : config.json_loc if data_loc is None else data_loc,
             'log_loc' : config.log_loc if data_loc is None else data_loc,
-            'pic_loc' : config.twitter_id_loc[kw],
+            'pic_loc' : twitter_id_loc[kw],
             'date' : True
         }
         try:

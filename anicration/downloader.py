@@ -82,15 +82,15 @@ def _requests_save(res_obj, file_save_path, override=False):
                 save_data.write(chunk)
 
 def _file_parser(file_obj):
-    """Turn a list seperated by EOL into a list with only links"""
-    logger.debug('_file_parser() called')
+    """Turn a list seperated by newline into a list with only links"""
+    #logger.debug('_file_parser() called') # -- due to inconsistencies
     parsed_list = list()
     for line in file_obj:
         if line.strip().startswith('#') or not line.strip().endswith(FILE_EXTENSIONS):
             logger.info('File parser : skipping %s', line.strip())
             print('Skipping', line.strip())
         else:
-            parsed_list.append(line)
+            parsed_list.append(line.strip())
     return parsed_list
 
 def _get_media_name(link):
@@ -106,8 +106,8 @@ def _media_request(link):
         try:
             media_res = requests.get(link)
             media_res.raise_for_status()
-        except (requests.ConnectionError, requests.HTTPError, requests.ConnectTimeout):
-            print('Download failed. Retrying ({}/3) in {} seconds'.format(retry, retry*5), end='\r')
+        except (requests.ConnectionError, requests.HTTPError, requests.ConnectTimeout) as err:
+            print('Download failed. Retrying ({}/3) in {} seconds : {}'.format(retry, retry*5, err), end='\r')
             sleep(retry*5)
             retry = retry + 1
         else:

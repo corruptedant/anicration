@@ -87,11 +87,14 @@ def _video_handler(medias: list):
 
 def _ext_ett_handler(ext_ett: dict, https: bool):
     """Stands for `extended_entity_handler()`. Accepts only `extended_entities` objects."""
-    media_type = ext_ett['media'][0]['type']
-    if media_type == 'photo':
-        return _photo_handler(ext_ett['media'], https)
-    elif media_type == 'video':
-        return _video_handler(ext_ett['media'])
+    try:
+        media_type = ext_ett['media'][0]['type']
+        if media_type == 'photo':
+            return _photo_handler(ext_ett['media'], https)
+        elif media_type == 'video':
+            return _video_handler(ext_ett['media'])
+    except TypeError:
+        print('TypeError excepted: ' + ext_ett)
 
 def get_quoted_data(status, https=True, silent_ignore=True):
     """Returns `QuoteParser` object.\n
@@ -143,7 +146,7 @@ def get_media_link(status, https=True):
         return media_links
     return None
 
-def media_parser(json_data: str, log_path: str, log_create=True):
+def media_parser(json_data: str, log_path: str, log_create=True, no_rt=True):
     """json_data needs to be a string(file.read()). The script will do the loading.
     Only reads a compiled Twitter API responses status arranged in a list : [{},{},{}]"""
     tweets = json.loads(json_data)
@@ -156,10 +159,22 @@ def media_parser(json_data: str, log_path: str, log_create=True):
 
     media_links = list()
     for (idx, tweet) in enumerate(tweets):
+        if tweet['is_quote_status'] is True:
+            continue
+        try:
+            tweet['retweeted_status']
+        except KeyError:
+            pass
+        else:
+            if no_rt is True:
+                continue
         try:
             media_links.extend(_ext_ett_handler(tweet['extended_entities'], True))
         except KeyError:
             logger.debug("No media at status number %d", idx)
+        except TypeError:
+            #print('TEST -- TypeError excepted at media_parser() at {}'.format(idx))
+            pass
 
     if log_create is True:
         with open(log_path, 'w', encoding="utf-8") as file:

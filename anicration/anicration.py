@@ -12,6 +12,8 @@ import re
 from .auxiliaryfuncs import _v_print, _set_verbosity
 from .seiyuuhandler import seiyuu_twitter, twitter_media_downloader, config_create
 from .confighandler import ConfigHandler
+from .downloader import _requests_save, _file_parser, _media_request, _get_media_name, _folder_check_empty
+import anicration.downloader as downloader
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -37,6 +39,10 @@ def argument_create():
     section.add_argument(
         '-b', '--blog',
         action='store_true', default=None, help='Blog mode. To Be Implemented')
+    section.add_argument(
+        '-T', '--textfile',
+        action='store_true', default=None,
+        help='Text file mode. Seperate links by new line in the file.')
 
     store_type = parser.add_mutually_exclusive_group()
     store_type.add_argument(
@@ -100,7 +106,6 @@ def _link_parser(link):
 def _regex_twitname(args):
     for username in TWITTER_USERNAMES:
         regrex = r'^([@]?)' + re.escape(args.website)
-        args.twitter = True
         if re.search(regrex, username, re.IGNORECASE):
             _v_print('Twitter username found, engaging twitter mode.', verbosity=1)
             if username[0] != '@':
@@ -134,6 +139,7 @@ def _files_to_save(args, payload):
 
 def _get_mode(args, payload, config):
     if args.twitter:
+        print('Twitter mode...')
         payload['auth_keys'] = config.auth_keys
         if args.verbose >= 2:
             _print_payload(payload)
@@ -149,6 +155,44 @@ def _get_mode(args, payload, config):
         print("Instagram mode...")
     elif args.blog:
         print("Blog mode...")
+    elif args.textfile:
+        print('Engaging textfile mode.')
+        if args.website is None:
+            print('No textfile location provided, exiting program..')
+            sys.exit(1)
+        else:
+            txtf_name = args.website
+            print(txtf_name)
+            try:
+                textfile_handler(txtf_name, save_location=' '.join(payload['location']))
+            except FileNotFoundError:
+                print('File does not exist, exiting program...')
+                sys.exit(1)
+            except KeyboardInterrupt:
+                sys.exit('ERROR : User interrupted the program.')
+            else:
+                print('\nComplete')
+                sys.exit(0)
+
+def textfile_handler(file, **kwargs):
+    #parse the links
+    with open(file, 'r', encoding='utf-8') as txt_f:
+        links = _file_parser(txt_f)
+        save_loc = _folder_check_empty(
+            kwargs.pop('save_location', None), 'Anicration', 'Pics', True
+        )
+        length = len(links)
+        for (idx, link) in enumerate(links):
+            percent = downloader._percent_former((idx+1), length)
+            name = _get_media_name(link)
+            if os.path.exists(os.path.join(save_loc, name)):
+                message = 'File ' + name + ' already exists'
+                downloader._status_print(message, percent, save_loc)
+            else:
+                message = 'Downloading : ' + link[-50:]
+                downloader._status_print(message, percent, save_loc)
+                res = _media_request(link)
+                _requests_save(res, os.path.join(save_loc, name))
 
 def _print_payload(payload):
     """Prints payload dict() for debug purposes."""
@@ -207,7 +251,7 @@ def args_handler(args):
     if not args.website is None:
         # Temporary implementation since Instagram uses the same prefix for usernames['@']
         payload['twitter_id'] = _regex_twitname(args)
-        if 'twitter' in args.website:
+        if 'twitter.com/' in args.website:
             payload['twitter_id'] = '@' + _link_parser(args.website)
             args.twitter = True
         elif '@' in args.website:

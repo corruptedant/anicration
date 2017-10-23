@@ -174,9 +174,9 @@ def twitter_media_downloader(**kwargs):
 def seiyuu_twitter(custom_config_path=None, **kwargs):
     """Initated when `$anicration` is called without arguments."""
     config = ConfigHandler(custom_config_path)
-    if config.no_config is not False:
+    if config.log is True:
         logging.basicConfig(filename='seiyuu_twitter.txt', level=logging.INFO)
-        print('A config file will be created at ', os.path.join(os.getcwd(), 'seiyuu_twitter.txt'))
+        print('A log file will be created at ', os.path.join(os.getcwd(), 'seiyuu_twitter.txt'))
         logging.info("{:%Y/%m/%d %H:%M:%S}".format(datetime.now()))
     _set_verbosity(0 if config.verbosity == 0 else config.verbosity - 1)
     twitter_id_loc = config.twitter_id_loc

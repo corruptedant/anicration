@@ -53,11 +53,15 @@ class ConfigHandler():
         self.data_in_pic_loc = config.getboolean('Seiyuu Twitter', 'data_loc_in_pic_folder')
         self.parser = config.getboolean('Seiyuu Twitter', 'parser')
         self.downloader = config.getboolean('Seiyuu Twitter', 'downloader')
-        self.no_config = config.getboolean('Seiyuu Twitter', 'config')
+        self.log = config.getboolean('Seiyuu Twitter', 'log')
+
+        self.override = config.getboolean('General', 'override')
 
         try:
+            # TODO -- obtain from 'Twitter' instead once things finalized
             self.items = config.getint('Seiyuu Twitter', 'items')
         except ValueError:
+            print('ValueError excepted.')
             self.items = 0
 
     @property

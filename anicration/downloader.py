@@ -64,11 +64,12 @@ def _percent_former(curr, leng):
     content = (
         "[{:{fill}{width}}/{length}]".format(curr, fill=0, width=len(str(leng)), length=leng)
     )
-    return percent + ' ' + content + ' :'
+    return percent + ' ' + content
 
 def _status_print(message, percent, save_location):
     """Prints the status on the downloading session."""
-    print(percent, save_location, ':',
+    print(percent, 
+          ' : ' + save_location if save_location is not None else '', ':',
           message, '    ', end='\r')
     logger.info('%s %s', save_location, message)
 
@@ -125,17 +126,17 @@ def _media_download(twimg_list, save_location):
 
         if os.path.exists(os.path.join(save_location, media_name)):
             message = 'File ' + media_name + ' already exists.'
-            _status_print(message, percent, save_location)
+            _status_print(message, percent, None)
         elif not media.lower().endswith(FILE_EXTENSIONS):
             message = 'Invalid media link ' + media + ' detected : skipping'
-            _status_print(message, percent, save_location)
+            _status_print(message, percent, None)
         else:
             if media.lower().endswith('.jpg'):
-                _status_print('Downloading ' + media_name, percent, save_location)
+                _status_print('Downloading ' + media_name, percent, None)
                 # only .jpg have different sizes (:large, :small)
                 media_link = media + ':orig'
             elif media.lower().endswith(('.png', '.mp4')):
-                _status_print('Downloading ' + media_name, percent, save_location)
+                _status_print('Downloading ' + media_name, percent, None)
                 media_link = media
 
             media_res = _media_request(media_link)

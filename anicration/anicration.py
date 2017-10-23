@@ -86,6 +86,9 @@ def argument_create():
         '-I', '--items',
         type=int, default=None, metavar='int',
         help='How much JSON responses to go through. Defaults to 0(all of available status)')
+    parser.add_argument(
+        '-o', '--data_check',
+        action='store_true', default=None, help='[Textfile mode] save the file with (n) appended if file is not the same data.')
 
     parser.add_argument(
         "website",
@@ -144,13 +147,17 @@ def _get_mode(args, payload, config):
         if args.verbose >= 2:
             _print_payload(payload)
         try:
-            twitter_media_downloader(**payload)
+            if len(config.twitter_usernames) != 1:
+                for username in config.twitter_usernames:
+                    payload['twitter_id'] = username
+                    twitter_media_downloader(**payload)
+                else:
+                    twitter_media_downloader(**payload)
         except KeyboardInterrupt:
             print('\nERROR : User interrupted the program')
             sys.exit(1)
         else:
             print('Complete')
-            sys.exit(0)
     elif args.instagram:
         print("Instagram mode...")
     elif args.blog:
@@ -158,21 +165,20 @@ def _get_mode(args, payload, config):
     elif args.textfile:
         print('Engaging textfile mode.')
         if args.website is None:
-            print('No textfile location provided, exiting program..')
-            sys.exit(1)
+            sys.exit('ERROR : No textfile location provided, exiting program...')
         else:
             txtf_name = args.website
             print(txtf_name)
             try:
-                textfile_handler(txtf_name, save_location=' '.join(payload['location']))
-            except FileNotFoundError:
-                print('File does not exist, exiting program...')
-                sys.exit(1)
+                textfile_handler(
+                    txtf_name, save_location=' '.join(payload['location']), override=config.override
+                )
+            except FileNotFoundError as err:
+                sys.exit('File does not exist, exiting program : ' + err)
             except KeyboardInterrupt:
                 sys.exit('ERROR : User interrupted the program.')
             else:
                 print('\nComplete')
-                sys.exit(0)
 
 def textfile_handler(file, **kwargs):
     #parse the links
@@ -185,11 +191,27 @@ def textfile_handler(file, **kwargs):
         for (idx, link) in enumerate(links):
             percent = downloader._percent_former((idx+1), length)
             name = _get_media_name(link)
-            if os.path.exists(os.path.join(save_loc, name)):
-                message = 'File ' + name + ' already exists'
+            if os.path.exists(os.path.join(save_loc, name)) and kwargs['override'] is True:
+                with open(os.path.join(save_loc, name), 'r+b') as pic_f:
+                    res = _media_request(link)
+                    if res.content == pic_f.read():
+                        message = 'File ' + name + ' already exists.'
+                        downloader._status_print(message, percent, save_loc)
+                    else:
+                        i = 1
+                        file_name, fext = os.path.splitext(name)
+                        file_path = os.path.join(save_loc, file_name + '({})'.format(str(i)) + fext)
+                        while os.path.exists(file_path):
+                            i = i+1
+                            file_path = os.path.join(save_loc, file_name + '({})'.format(str(i)) + fext)
+                        else:
+                            with open(file_path, 'wb') as new_f:
+                                new_f.write(res.content)
+            elif os.path.exists(os.path.join(save_loc, name)) and kwargs['override'] is False:
+                message = 'File with the name' + name + ' already exists.'
                 downloader._status_print(message, percent, save_loc)
             else:
-                message = 'Downloading : ' + link[-50:]
+                message = 'Downloading : ' + link[-20:]
                 downloader._status_print(message, percent, save_loc)
                 res = _media_request(link)
                 _requests_save(res, os.path.join(save_loc, name))
@@ -197,10 +219,25 @@ def textfile_handler(file, **kwargs):
 def _print_payload(payload):
     """Prints payload dict() for debug purposes."""
     for keyword in payload:
-        print(keyword, ":", payload[keyword])
+        _v_print(keyword, ":", payload[keyword], verbosity=1, level=None)
 
 def args_handler(args):
     """Handle parsed arguments"""
+    def _loc_set(var=None):
+        """Set the 3 locations variables to the value given."""
+        for name in ('json_loc', 'log_loc', 'pic_loc'):
+            payload[name] = var
+
+    def _store_type(args, prefix=''):
+        if args.downloader:
+            _loc_set()
+            _v_print('Storing all files in', os.path.join(prefix, 'Downloader'))
+        elif args.data:
+            _loc_set(os.path.join(prefix, 'data'))
+            payload['pic_loc'] = prefix
+        elif args.current:
+            _loc_set(os.getcwd())
+            _v_print('Storing all files in ', os.getcwd())
     payload = dict()
 
     # quick and dirty silent mode
@@ -223,15 +260,11 @@ def args_handler(args):
 
     config_mode = False
     config = ConfigHandler()
-    def _loc_set(var=None):
-        """Set the 3 locations variables to the value given."""
-        for name in ('json_loc', 'log_loc', 'pic_loc'):
-            payload[name] = var
 
     # 0 is when -c is not even called.
     if args.config is not 0:
         config = ConfigHandler(args.config)
-        _v_print('Config Mode, auto-enabling Twitter mode.', verbosity=1)
+        _v_print('Config Mode.', verbosity=1)
         args.twitter = True
         config_mode = True
         payload = {
@@ -266,24 +299,13 @@ def args_handler(args):
     # in case of a non-default --items integer is given
     if not args.items is None:
         payload['items'] = args.items
-    elif args.items is None and config_mode is True:
+    elif args.items is None and config_mode is False:
         payload['items'] = 0
     else:
         pass
 
     # for the x_only and config default override avoidance.
     payload = _files_to_save(args, payload)
-
-    def _store_type(args, prefix=''):
-        if args.downloader:
-            _loc_set()
-            _v_print('Storing all files in', os.path.join(prefix, 'Downloader'))
-        elif args.data:
-            _loc_set(os.path.join(prefix, 'data'))
-            payload['pic_loc'] = prefix
-        elif args.current:
-            _loc_set(os.getcwd())
-            _v_print('Storing all files in ', os.getcwd())
 
     if args.location:
         _store_type(args, ' '.join(args.location))
@@ -295,7 +317,7 @@ def args_handler(args):
     payload['location'] = args.location
     payload['config'] = args.config
 
-    # triggers
+    #triggers
     _get_mode(args, payload, config)
     return payload
 
@@ -310,9 +332,9 @@ def main():
         _v_print('Defaulting to seiyuu_twitter()...', level=None)
         seiyuu_twitter()
     else:
-        _v_print('A log file will be created at', os.getcwd(), verbosity=0, level=None)
+        _v_print('A log file will be created at', os.getcwd(), verbosity=1, level=None)
         logging.basicConfig(filename='anicration.txt', level=logging.INFO)
-        _print_payload(args_handler(args))
+        args_handler(args)
 
 if __name__ == "__main__":
     main()

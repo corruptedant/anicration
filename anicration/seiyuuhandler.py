@@ -125,6 +125,7 @@ def twitter_media_downloader(**kwargs):
     # Check the folders/locations
     json_loc = _folder_check_empty(kwargs.pop('json_loc', None), 'Downloader', 'json')
     log_loc = _folder_check_empty(kwargs.pop('log_loc', None), 'Downloader', 'log')
+    kwargs['pic_loc'] = kwargs.pop('pic_loc', None)
     subfolder_create = True if kwargs['pic_loc'] == '' or kwargs['pic_loc']  is None else False
     # this is the master folder. more folders is created to sort by person
     pic_loc = _folder_check_empty(kwargs['pic_loc'], 'Downloader', 'pictures')
@@ -174,12 +175,18 @@ def twitter_media_downloader(**kwargs):
 def seiyuu_twitter(custom_config_path=None, **kwargs):
     """Initated when `$anicration` is called without arguments."""
     config = ConfigHandler(custom_config_path)
-    if config.log is True:
+    if config.log is True and kwargs['create_config'] is True:
         logging.basicConfig(filename='seiyuu_twitter.txt', level=logging.INFO)
         print('A log file will be created at ', os.path.join(os.getcwd(), 'seiyuu_twitter.txt'))
         logging.info("{:%Y/%m/%d %H:%M:%S}".format(datetime.now()))
     _set_verbosity(0 if config.verbosity == 0 else config.verbosity - 1)
     twitter_id_loc = config.twitter_id_loc
+    # Run through set keyword arguments and set it to None if KeyError
+    for kw in ('items', 'parser', 'downloader', 'json_loc', 'log_loc', 'pic_loc'):
+        try:
+            kwargs[kw]
+        except KeyError:
+            kwargs[kw] = None
     for kw in twitter_id_loc:
         data_loc = None
         if config.data_in_pic_loc is True:
@@ -191,14 +198,21 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
             'keys_from_args' : config.keys_from_args,
             'auth_keys': kwargs['auth_keys'] if config.keys_from_args is True else config.auth_keys,
             'twitter_id' : kw,      #keyword is the username
-            'items' : config.items,
-            'parser' : (config.parser, True),
-            'downloader' : config.downloader,
-            'json_loc' : config.json_loc if data_loc is None else data_loc,
-            'log_loc' : config.log_loc if data_loc is None else data_loc,
-            'pic_loc' : twitter_id_loc[kw],
+            'items' : config.items if kwargs['items'] is None else kwargs['items'],
+            'parser' : (config.parser, True) if kwargs['parser'] is None else kwargs['parser'],
+            'downloader' : config.downloader if kwargs['downloader'] is None else kwargs['downloader'],
+            'pic_loc' : twitter_id_loc[kw] if kwargs['pic_loc'] is None else kwargs['pic_loc'],
             'date' : True
         }
+        # Checking locations for -a mode
+        if kwargs['json_loc'] is None:
+            payload['json_loc'] = config.json_loc if data_loc is None else data_loc
+        else:
+            payload['json_loc'] = kwargs['json_loc']
+        if kwargs['log_loc'] is None:
+            payload['log_loc'] = config.log_loc if data_loc is None else data_loc
+        else:
+            payload['log_loc'] = kwargs['log_loc']
         try:
             twitter_media_downloader(**payload)
         except KeyboardInterrupt:

@@ -31,6 +31,9 @@ def argument_create():
 
     section = parser.add_mutually_exclusive_group()
     section.add_argument(
+        '-a', '--anicration',
+        action='store_true', default=None, help='Anicration mode.')
+    section.add_argument(
         '-t', '--twitter',
         action='store_true', default=None, help='Twitter mode.')
     section.add_argument(
@@ -147,12 +150,12 @@ def _get_mode(args, payload, config):
         if args.verbose >= 2:
             _print_payload(payload)
         try:
-            if len(config.twitter_usernames) != 1:
+            if args.website is None and len(config.twitter_usernames) != 1:
                 for username in config.twitter_usernames:
                     payload['twitter_id'] = username
                     twitter_media_downloader(**payload)
-                else:
-                    twitter_media_downloader(**payload)
+            else:
+                twitter_media_downloader(**payload)
         except KeyboardInterrupt:
             print('\nERROR : User interrupted the program')
             sys.exit(1)
@@ -163,7 +166,7 @@ def _get_mode(args, payload, config):
     elif args.blog:
         print("Blog mode...")
     elif args.textfile:
-        print('Engaging textfile mode.')
+        print('Textfile mode...')
         if args.website is None:
             sys.exit('ERROR : No textfile location provided, exiting program...')
         else:
@@ -179,6 +182,19 @@ def _get_mode(args, payload, config):
                 sys.exit('ERROR : User interrupted the program.')
             else:
                 print('\nComplete')
+    elif args.anicration:
+        print('Anicration mode...')
+        if args.website:
+            print('ERROR : ', args.website, ' is provided on Anicration mode.')
+        payload = dict()
+        payload['create_config'] = False
+        if args.items:
+            payload['items'] = args.items
+        payload = _files_to_save(args, payload)
+        payload = _store_type(args, payload, os.getcwd())
+        if args.verbose >= 2:
+            _print_payload(payload)
+        seiyuu_twitter(None, **payload)
 
 def textfile_handler(file, **kwargs):
     #parse the links
@@ -221,23 +237,26 @@ def _print_payload(payload):
     for keyword in payload:
         _v_print(keyword, ":", payload[keyword], verbosity=1, level=None)
 
-def args_handler(args):
-    """Handle parsed arguments"""
+def _store_type(args, payload, prefix=''):
     def _loc_set(var=None):
         """Set the 3 locations variables to the value given."""
         for name in ('json_loc', 'log_loc', 'pic_loc'):
             payload[name] = var
+    if args.downloader:
+        _loc_set()
+        _v_print('Storing all files in', os.path.join(prefix, 'Downloader'))
+    elif args.data:
+        _loc_set(os.path.join(prefix, 'data'))
+        payload['pic_loc'] = prefix
+        _v_print('Storing all data files in ', os.path.join(prefix, 'Data'))
+    elif args.current:
+        _loc_set(os.getcwd())
+        _v_print('Storing all files in ', os.getcwd())
+    return payload
 
-    def _store_type(args, prefix=''):
-        if args.downloader:
-            _loc_set()
-            _v_print('Storing all files in', os.path.join(prefix, 'Downloader'))
-        elif args.data:
-            _loc_set(os.path.join(prefix, 'data'))
-            payload['pic_loc'] = prefix
-        elif args.current:
-            _loc_set(os.getcwd())
-            _v_print('Storing all files in ', os.getcwd())
+def args_handler(args):
+    """Handle parsed arguments"""
+    #============================#
     payload = dict()
 
     # quick and dirty silent mode
@@ -281,7 +300,14 @@ def args_handler(args):
         }
 
     # when a website value is not provided, access twitter_usernames.
-    if not args.website is None:
+    if args.website is not None:
+        # Checks if clashing mode exists
+        if args.anicration:
+            _v_print(
+                'ERROR : Anicration mode doesn\'t accept website/account.',
+                verbosity=0, level=logging.ERROR
+            )
+            sys.exit(1)
         # Temporary implementation since Instagram uses the same prefix for usernames['@']
         payload['twitter_id'] = _regex_twitname(args)
         if 'twitter.com/' in args.website:
@@ -308,9 +334,9 @@ def args_handler(args):
     payload = _files_to_save(args, payload)
 
     if args.location:
-        _store_type(args, ' '.join(args.location))
+        payload = _store_type(args, payload, ' '.join(args.location))
     else:
-        _store_type(args, os.getcwd())
+        payload = _store_type(args, payload, os.getcwd())
 
     # temporary
     payload['website'] = args.website

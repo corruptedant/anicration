@@ -39,7 +39,7 @@ class ConfigHandler():
         config = ConfigParser()
         if config_file is None:
             if not os.path.exists(DEFAULT_CONFIG_PATH):
-                print('Default config file does not exist. Exiting program..')
+                print('Default config file does not exist. Try "anicration -c create".')
                 sys.exit(1)
             else:
                 config.read(DEFAULT_CONFIG_PATH)

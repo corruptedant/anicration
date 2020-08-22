@@ -31,6 +31,8 @@ no_retweet = True
 no_quoted_status = True
 
 [General]
+# Creates a log file everytime the application runs(defaults to False)
+create_log_file = False
 # [Temporarily textfile mode only] -- if u want to check data differences.
 override = True
 

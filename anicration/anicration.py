@@ -88,7 +88,7 @@ def argument_create():
     parser.add_argument(
         '-I', '--items',
         type=int, default=None, metavar='int',
-        help='How much JSON responses to go through. Defaults to 0(all of available status)')
+        help='How much JSON responses to go through. Defaults to 0(no limit/all)')
     parser.add_argument(
         '-o', '--data_check',
         action='store_true', default=None, help='[Textfile mode] save the file with (n) appended if file is not the same data.')
@@ -358,8 +358,8 @@ def main():
         _v_print('Defaulting to seiyuu_twitter()...', level=None)
         seiyuu_twitter()
     else:
-        _v_print('A log file will be created at', os.getcwd(), verbosity=1, level=None)
-        logging.basicConfig(filename='anicration.txt', level=logging.INFO)
+        #_v_print('A log file will be created at', os.getcwd(), verbosity=1, level=None)
+        #logging.basicConfig(filename='anicration.txt', level=logging.INFO)
         args_handler(args)
 
 if __name__ == "__main__":

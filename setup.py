@@ -9,6 +9,7 @@ setup(
     author_email='corruptedant@gmail.com',
     license='MIT',
     packages=['anicration',],
+    package_data={'anicration':['config/example.txt']},
     long_description=open('README').read(),
     classifiers=[
         'Development Status :: 3 - Alpha',

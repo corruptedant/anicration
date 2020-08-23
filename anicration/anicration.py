@@ -90,15 +90,17 @@ def argument_create():
         type=int, default=None, metavar='int',
         help='How much JSON responses to go through. Defaults to 0(no limit/all)')
     parser.add_argument(
-        '-o', '--data_check',
+        '-dc', '--data_check',
         action='store_true', default=None, help='[Textfile mode] save the file with (n) appended if file is not the same data.')
+    parser.add_argument(
+        '-o', '--output',
+        type=str, nargs='?', const=None, default=None, metavar='loc',
+        help="where to save the file(default : current directory)")
 
     parser.add_argument(
         "website",
         nargs='?', type=str, help="the web address of the profile page")
-    parser.add_argument(
-        "location",
-        nargs='*', type=str, help="where to save the file(default : current directory)")
+    
     return parser.parse_args()
 
 def _link_parser(link):
@@ -124,6 +126,10 @@ def _regex_twitname(args):
 
 def _files_to_save(args, payload):
     if args.json_only:
+        _v_print('JSON only.')
+        # TODO : more linear excecution;program still checks to create folder despite state of run
+        # program should also always dump to current directory, 
+        payload['json_only'] = True
         payload['json_save'] = True
         payload['parser'] = (False, False)
         payload['downloader'] = False
@@ -168,7 +174,7 @@ def _get_mode(args, payload, config):
     elif args.textfile:
         print('Textfile mode...')
         if args.website is None:
-            sys.exit('ERROR : No textfile location provided, exiting program...')
+            raise TypeError('ERROR : No textfile location provided, exiting program...')
         else:
             txtf_name = args.website
             print(txtf_name)
@@ -272,7 +278,6 @@ def args_handler(args):
 
     # ConfigHandler() crashes if it doesn't find a file, so this come first.
     if args.config == 'create':
-        _v_print('Creating config...', verbosity=1)
         config_create()
         _v_print('Config created.', verbosity=0)
         sys.exit(0)
@@ -332,14 +337,14 @@ def args_handler(args):
     # for the x_only and config default override avoidance.
     payload = _files_to_save(args, payload)
 
-    if args.location:
-        payload = _store_type(args, payload, ' '.join(args.location))
+    if args.output:
+        payload = _store_type(args, payload, ' '.join(args.output))
     else:
         payload = _store_type(args, payload, os.getcwd())
 
     # temporary
     payload['website'] = args.website
-    payload['location'] = args.location
+    payload['location'] = args.output
     payload['config'] = args.config
 
     #triggers

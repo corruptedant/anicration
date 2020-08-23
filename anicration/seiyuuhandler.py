@@ -98,12 +98,11 @@ def _tweepy_init(auth_keys):
 def _get_json(api, twitter_id: str, items: int):
     def _get_cursor():
         return tweepy.Cursor(api.user_timeline, id=twitter_id, tweet_mode='extended')
-    # [{<response>}, {<response>}, .., <response>,] (removes last dangling comma)
     def _get_status():
-        json_data = '['
+        json_data = list()
         json_num = int()
         for (idx, status) in enumerate(_get_cursor().items(items)):
-            json_data = json_data + json.dumps(status._json, ensure_ascii=False) + ','
+            json_data.append(status._json)
             _v_print(
                 'Retrived', str(idx + 1), 'JSON responses.',
                 verbosity=1, level=None, end='\r'
@@ -113,26 +112,23 @@ def _get_json(api, twitter_id: str, items: int):
     json_data, json_num = _tweepy_retry(_get_status, 'JSON retrieving')
     _v_print('', verbosity=1, level=None, end='\r')
     logger.info('Retrived ' + str(json_num) + ' JSON responses')
-    json_data = json_data[:len(json_data)-1] + ']'
     return json_data
 
 def twitter_media_downloader(**kwargs):
     """Downloads twitter media from an account. All variables are pass in kwargs. Refer to wiki."""
-    items = kwargs.pop('items', 0)
-    # Check the folders/locations
-    json_loc = _folder_check_empty(kwargs.pop('json_loc', None), 'Downloader', 'json')
-    log_loc = _folder_check_empty(kwargs.pop('log_loc', None), 'Downloader', 'log')
-    kwargs['pic_loc'] = kwargs.pop('pic_loc', None)
-    subfolder_create = True if kwargs['pic_loc'] == '' or kwargs['pic_loc']  is None else False
-    # this is the master folder. more folders is created to sort by person
-    pic_loc = _folder_check_empty(kwargs['pic_loc'], 'Downloader', 'pictures')
-
+    # BIG TODO : either this be a handler or be expliciting a downloader
+    # for example, it should not check if folders exists or not, that should be the job of another batch of code
+    # pic loc, all the loc are quite redundant in a sense; something could be done about these
+    # -j, -l and -m should work better here
+    # instead of passing 'json_save', 'parser' and '
     try:
         api = _tweepy_init(kwargs['auth_keys'])
     except KeyError:
+        # TODO : check if this is redundant, program should crash before it reaches here if authentication keys is missing
         _v_print('Authentication keys is missing.', 0, logger.critical)
         raise
 
+    items = kwargs.pop('items', 0)
     json_save = kwargs.pop('json_save', True)
     twitter_id = kwargs['twitter_id']
     # Defaults to twitter_id(without the '@')
@@ -140,21 +136,37 @@ def twitter_media_downloader(**kwargs):
     date_ext = "-{:%y%m%d%H%M%S}".format(datetime.now())
     _v_print('Twitter id:', twitter_id)
 
-    # pic_path is the folder the the pic will be stored in, psuedomeaning == final loc
-    if subfolder_create is True:
-        pic_path = os.path.join(pic_loc, file_name)
-    else:
-        pic_path = pic_loc
-    _v_print('Picture directory : ' + pic_path)
+    # Check the folders/locations
+    kwargs['pic_loc'] = kwargs.pop('pic_loc', None)
+    subfolder_create = True if kwargs['pic_loc'] == '' or kwargs['pic_loc']  is None else False
+    if kwargs['location'] is None :
+        json_loc = _folder_check_empty(kwargs.pop('json_loc', None), 'Downloader', 'json')
+        log_loc = _folder_check_empty(kwargs.pop('log_loc', None), 'Downloader', 'log')
+        # this is the master folder. more folders is created to sort by person
+        pic_loc = _folder_check_empty(kwargs['pic_loc'], 'Downloader', 'pictures')
+        # pic_path is the folder the the pic will be stored in, psuedomeaning == final loc
+        if subfolder_create is True:
+            pic_path = os.path.join(pic_loc, file_name)
+        else:
+            pic_path = pic_loc
+        _v_print('Picture directory : ' + pic_path)
 
+    # TODO : Check if any code still uses kwargs['date']
     date = kwargs.pop('date', False)
-    json_path = os.path.join(json_loc, file_name) + (date_ext if date is True else '') + '.json'
+    #sets the path depending if kwargs['location'] is given or not
+    if kwargs['location'] is not None:
+        json_path = os.path.join(kwargs['location'], file_name) + '.json'
+    else:
+        json_path = os.path.join(json_loc, file_name) + (date_ext if date is True else '') + '.json'
     json_data = _get_json(api, twitter_id, items)
 
     if json_save is True:
         with open(json_path, 'w', encoding="utf-8") as file:
-            _v_print('Storing json file at ' + json_path, verbosity=None)
-            file.write(json_data)
+            _v_print('Storing json file at ' + json_path, verbosity=2)
+            file.write(json.dumps(json_data))
+
+    if kwargs['json_only'] is True:
+        sys.exit('complete')
 
     log_path = os.path.join(
         log_loc, (file_name +  (date_ext if date is True else '') + '.txt')

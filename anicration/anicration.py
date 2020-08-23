@@ -287,7 +287,6 @@ def args_handler(args):
         args.twitter = True
         config_mode = True
         payload = {
-            'keys_from_args' : config.keys_from_args,
             'auth_keys': config.auth_keys,
             'twitter_id' : config.twitter_usernames[0],
             'items' : config.items,
@@ -356,6 +355,7 @@ def main():
     # Handle all the variables
     if not len(sys.argv) > 1:
         _v_print('Defaulting to seiyuu_twitter()...', level=None)
+        # TODO : seiyuu_twitter DOESN'T CALL custom_config_path
         seiyuu_twitter()
     else:
         #_v_print('A log file will be created at', os.getcwd(), verbosity=1, level=None)

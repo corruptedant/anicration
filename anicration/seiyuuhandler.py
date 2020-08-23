@@ -5,9 +5,6 @@ Uses a config file(defaults to %appdata%/anicration/config.txt) which most funct
 config_create() creates a config file(you may provide a location) at affromentioned location.\n
 twitter_media_downloader() does the bulk of downloading photo/video of accounts with the added
 benefit of allowing one to customize their inputs if they know Python.\n
-twit_dl_parser() allows one to more easily input parameters(twitter_media_downloader() uses
-kwargs which means lots of reading).\n
-seiyuu_twitter() is basically twit_dl_parser() but for globally callable script uses.
 track_twitter_info() downloads all 9 seiyuu current-user-data for tracking numbers and maths.\n
 Refer to the wiki for more information.
 """
@@ -194,9 +191,7 @@ def seiyuu_twitter(custom_config_path=None, **kwargs):
                 twitter_id_loc[kw] if twitter_id_loc[kw] is not None else '', 'data'
             )
         payload = {
-            # TODO : confirm no keys_From_args is needed
-            'keys_from_args' : config.keys_from_args,
-            'auth_keys': kwargs['auth_keys'] if config.keys_from_args is True else config.auth_keys,
+            'auth_keys': kwargs['auth_keys'] if kwargs['auth_keys'] is not None else config.auth_keys,
             'twitter_id' : kw,      #keyword is the username
             'items' : config.items if kwargs['items'] is None else kwargs['items'],
             'parser' : (config.parser, True) if kwargs['parser'] is None else kwargs['parser'],
@@ -277,42 +272,3 @@ def track_twitter_info(custom_config_path=None, no_wait=False):
             get_user_data()
             sleep(1)
         sleep(1)
-
-def twit_dl_parser(config_mode=True, config_path=None, twitter_usernames=None, items=0, parser=True,
-                   downloader=True, json_save=True, json_save_location=None, log_save_location=None,
-                   pic_save_location=None, **kwargs):
-    """This method is not recommended. May be considered for deprecation as well."""
-    if config_mode is True:
-        config = ConfigHandler(config_path)
-        payload = {
-            'keys_from_args' : config.keys_from_args,
-            'twitter_usernames' : config.twitter_usernames,
-            'items' : config.items,
-            'parser' : config.parser,
-            'downloader' : config.downloader,
-            'json_save' : json_save,
-            'json_loc' : config.json_loc,
-            'log_loc' : config.log_loc,
-            'pic_loc' : config.pic_loc
-        }
-        for keyword in kwargs:
-            logger.debug("%s : %s", keyword, kwargs[keyword])
-    else:
-        payload = {
-            'keys_from_args' : False,
-            'twitter_usernames' : twitter_usernames,
-            'items' : items,
-            'parser' : parser,
-            'downloader' : downloader,
-            'json_save' : json_save,
-            'json_loc' : json_save_location,
-            'log_loc' : log_save_location,
-            'pic_loc' : pic_save_location
-        }
-        for keyword in kwargs:
-            logger.debug("%s : %s", keyword, kwargs[keyword])
-
-    if config_mode is True and config.keys_from_args is False:
-        twitter_media_downloader(*config.auth_keys, **payload)
-    elif config.keys_from_args is True or config_mode is False:
-        twitter_media_downloader(*kwargs['auth_keys'], **payload)

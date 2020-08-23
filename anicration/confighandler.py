@@ -21,8 +21,7 @@ def _str_parser(str_list, seperator=',', strip=True, pop_check=False):
     """Converts a sets of inputs with a common seperator. strip applies `str.strip()` to all values
     It can also list.pop() the last variable if it's empty(enable it with `pop_check`)"""
     if str_list is None:
-        print('Error : ' + str_list + ' is empty.')
-        return None
+        raise ValueError('str_list is empty')
     split_list = str_list.split(seperator)
     # Perform strip() for all values
     if strip is True:
@@ -56,14 +55,8 @@ class ConfigHandler():
         self.log = config.getboolean('Seiyuu Twitter', 'log')
 
         self.override = config.getboolean('General', 'override')
-
-        try:
-            # TODO -- obtain from 'Twitter' instead once things finalized
-            self.items = config.getint('Seiyuu Twitter', 'items')
-        except ValueError:
-            print('ValueError excepted.')
-            self.items = 0
-
+        self.items = config.getint('TWITTER', 'items')
+        
     @property
     def twitter_id_loc(self):
         _twitter_id_loc = dict()
@@ -89,14 +82,15 @@ class ConfigHandler():
             print(username, address)
 
     @property
-    def keys_from_args(self):
-        """For determining if auth_keys is obtained from config or input **kwargs."""
-        return self._config.getboolean('AUTHENTICATION', 'keys_from_args')
-
-    @property
     def auth_keys(self):
         """Authentication keys for Tweepy(Twitter's API)"""
-        return _str_parser(self._config['AUTHENTICATION']['keys'])
+        auth_keys = [
+            self._config['AUTHENTICATION']['consumer_key'].strip(),
+            self._config['AUTHENTICATION']['consumer_secret'].strip(),
+            self._config['AUTHENTICATION']['access_key'].strip(),
+            self._config['AUTHENTICATION']['access_secret'].strip()
+        ]
+        return (auth_keys)
 
     @property
     def json_loc(self):

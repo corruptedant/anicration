@@ -76,22 +76,5 @@ suwa_nanaka =
 komiya_arisa = 
 furihata_ai = 
 takatsuki_kanako = 
-# =========================================== #
 
-[INSTAGRAM]
-# To be implemented : currently useless
-instagram_uersnames = aida_rikako_, kyanstagram_, furihatagram, kanako.tktk, anju_inami, 
 
-[AMEBLO]
-# To be implemented : currently useless
-shuukashu =
-anju =
-
-[LINE_BLOG]
-# To be implemented : currently useless
-aikyan = 
-anju = 
-
-[SPECIAL_BLOG]
-# To be implemented : currently useless
-arisha = 

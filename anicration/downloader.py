@@ -155,4 +155,5 @@ def parser_downloader(file, save_location=None):
         links_list[idx] = link.strip()
     _folder_check_empty(save_location)
     _media_download(links_list, save_location)
+    # TODO : I think "Completed" overwrites and looks funny, fix it by clearing 1 line
     _v_print('\nCompleted')

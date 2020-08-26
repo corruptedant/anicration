@@ -36,12 +36,12 @@ def argument_create():
     section.add_argument(
         '-t', '--twitter',
         action='store_true', default=None, help='Twitter mode.')
-    section.add_argument(
-        '-i', '--instagram',
-        action='store_true', default=None, help='Instagram mode. To Be Implemented')
-    section.add_argument(
-        '-b', '--blog',
-        action='store_true', default=None, help='Blog mode. To Be Implemented')
+    #section.add_argument(
+    #    '-i', '--instagram',
+    #    action='store_true', default=None, help='Instagram mode. To Be Implemented')
+    #section.add_argument(
+    #    '-b', '--blog',
+    #    action='store_true', default=None, help='Blog mode. To Be Implemented')
     section.add_argument(
         '-T', '--textfile',
         action='store_true', default=None,
@@ -49,11 +49,12 @@ def argument_create():
 
     store_type = parser.add_mutually_exclusive_group()
     store_type.add_argument(
-        '-d', '--downloader',
+        '-dm', '--downloader',
         action='store_true', help='Stores the file in a folder at current directory')
     store_type.add_argument(
         '-cf', '--current',
         action='store_true', help='Stores all files in current directory')
+    # TODO : deprecate -d, consider deprecate -cf as it will be the default setup
     store_type.add_argument(
         '-D', '--data',
         action='store_true', help='Stores pic in currdir, and data in .//data')
@@ -125,6 +126,8 @@ def _regex_twitname(args):
             return username
 
 def _files_to_save(args, payload):
+    # TODO : cf as default, downloader mode only when -df is evoked
+    # TODO : default to only media files to os.getcwd() if no download mode is called
     if args.json_only:
         _v_print('JSON only.')
         # TODO : more linear excecution;program still checks to create folder despite state of run
@@ -300,7 +303,7 @@ def args_handler(args):
             'json_loc' : config.json_loc,
             'log_loc' : config.log_loc,
             'pic_loc' : config.pic_loc,
-            'date' : True
+            'date' : True # TODO : ok wtf date is always true
         }
 
     # when a website value is not provided, access twitter_usernames.

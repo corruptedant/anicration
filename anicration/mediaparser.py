@@ -146,11 +146,14 @@ def get_media_link(status, https=True):
         return media_links
     return None
 
-def media_parser(json_data: str, log_path: str, log_create=True, no_rt=True):
+def media_parser(json_data, log_path: str, log_create=True, no_rt=True):
     """json_data needs to be a string(file.read()). The script will do the loading.
     Only reads a compiled Twitter API responses status arranged in a list : [{},{},{}]"""
-    # TODO : string and/or object is good.
-    tweets = json.loads(json_data)
+    try:
+        tweets = json.loads(json_data)
+    except TypeError:
+        _v_print('test - json not a str, passing as-is', 2)
+        tweets = json_data
 
     try:
         tweets[0]

@@ -121,6 +121,8 @@ def twitter_media_downloader(**kwargs):
     # pic loc, all the loc are quite redundant in a sense; something could be done about these
     # -j, -l and -m should work better here
     # instead of passing 'json_save', 'parser' and '
+    
+    # Initialize Tweepy
     try:
         api = _tweepy_init(kwargs['auth_keys'])
     except KeyError:
@@ -128,6 +130,7 @@ def twitter_media_downloader(**kwargs):
         _v_print('Authentication keys is missing.', 0, logger.critical)
         raise
 
+    # Set some global variables
     items = kwargs.pop('items', 0)
     json_save = kwargs.pop('json_save', True)
     twitter_id = kwargs['twitter_id']
@@ -139,6 +142,7 @@ def twitter_media_downloader(**kwargs):
     # Check the folders/locations
     kwargs['pic_loc'] = kwargs.pop('pic_loc', None)
     subfolder_create = True if kwargs['pic_loc'] == '' or kwargs['pic_loc']  is None else False
+    
     if kwargs['location'] is None :
         json_loc = _folder_check_empty(kwargs.pop('json_loc', None), 'Downloader', 'json')
         log_loc = _folder_check_empty(kwargs.pop('log_loc', None), 'Downloader', 'log')
@@ -163,9 +167,9 @@ def twitter_media_downloader(**kwargs):
     if json_save is True:
         with open(json_path, 'w', encoding="utf-8") as file:
             _v_print('Storing json file at ' + json_path, verbosity=2)
-            file.write(json.dumps(json_data))
+            file.write(json.dumps(json_data, sort_keys=True, indent=4, ensure_ascii=False))
 
-    if kwargs['json_only'] is True:
+    if kwargs.pop('json_only', False) is True:
         sys.exit('complete')
 
     log_path = os.path.join(
